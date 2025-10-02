@@ -2,23 +2,42 @@
 //  ContentView.swift
 //  POCUS_Mentor
 //
-//  Created by Russell Miller on 10/1/25.
+//  Root container for the POCUS Mentor experience.
 //
 
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject private var appState: AppState
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            Group {
+                if let role = appState.selectedRole {
+                    RoleExperienceContainer(role: role)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                RoleSwitcherButton(selectedRole: role) {
+                                    appState.resetState()
+                                }
+                            }
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                NotificationBellView()
+                            }
+                        }
+                } else {
+                    RoleSelectionView()
+                        .navigationTitle("POCUS Mentor")
+                        .toolbarTitleDisplayMode(.inline)
+                }
+            }
+            .animation(.spring(duration: 0.35), value: appState.selectedRole)
         }
-        .padding()
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(AppState())
 }
