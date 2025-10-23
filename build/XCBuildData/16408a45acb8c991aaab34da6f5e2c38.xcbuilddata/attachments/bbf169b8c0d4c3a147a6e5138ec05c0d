@@ -1,0 +1,179 @@
+{
+  "" : {
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSKit-primary.dia",
+    "emit-module-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSKit-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSKit-primary-emit-module.dia",
+    "pch" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSKit-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSKit-primary.swiftdeps"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Extensions/Collection+chunk.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Collection+chunk~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Extensions/Data+chunk.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Data+chunk~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Extensions/String+base64.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/String+base64~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Files.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Files~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Network.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Network~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Scheduler.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/Scheduler~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/TUSAPI.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSAPI~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/TUSClient.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClient~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/TUSClientError.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSClientError~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/TUSProtocolExtension.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TUSProtocolExtension~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Tasks/CreationTask.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/CreationTask~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Tasks/IdentifiableTask.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/IdentifiableTask~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Tasks/StatusTask.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/StatusTask~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/Tasks/UploadDataTask.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadDataTask~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/TusServerInfo.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/TusServerInfo~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/UploadInfo.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadInfo~partial.swiftmodule"
+  },
+  "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/Sources/TUSKit/UploadMetada.swift" : {
+    "const-values" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada.swiftconstvalues",
+    "dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada.d",
+    "diagnostics" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada.dia",
+    "index-unit-output-path" : "/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada.o",
+    "llvm-bc" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada.bc",
+    "object" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada.o",
+    "swift-dependencies" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada.swiftdeps",
+    "swiftmodule" : "/Users/russellmiller/Library/Developer/Xcode/DerivedData/POCUS_Mentor-exglneelvimfatgwatjgimrsciwr/SourcePackages/checkouts/TUSKit/build/TUSKit.build/Debug-iphoneos/TUSKit.build/Objects-normal/arm64/UploadMetada~partial.swiftmodule"
+  }
+}

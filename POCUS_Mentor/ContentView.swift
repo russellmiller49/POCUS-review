@@ -1,43 +1,55 @@
-//
-//  ContentView.swift
-//  POCUS_Mentor
-//
-//  Root container for the POCUS Mentor experience.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var appState: AppState
-    
+    @EnvironmentObject private var viewModel: AppViewModel
+
     var body: some View {
         NavigationStack {
-            Group {
-                if let role = appState.selectedRole {
-                    RoleExperienceContainer(role: role)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarLeading) {
-                                RoleSwitcherButton(selectedRole: role) {
-                                    appState.resetState()
-                                }
-                            }
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                NotificationBellView()
-                            }
-                        }
-                } else {
-                    RoleSelectionView()
-                        .navigationTitle("POCUS Mentor")
-                        .toolbarTitleDisplayMode(.inline)
+            ZStack {
+                switch viewModel.phase {
+                case .loading:
+                    ProgressView("Loading…")
+                        .progressViewStyle(.circular)
+                case .login:
+                    LoginView()
+                case .codeEntry(let email):
+                    OTPVerificationView(email: email)
+                case .selectingInstitution:
+                    InstitutionSelectionView()
+                case .dashboard:
+                    DashboardView()
                 }
             }
-            .animation(.spring(duration: 0.35), value: appState.selectedRole)
+            .padding(.horizontal)
+            .animation(.easeInOut, value: viewModel.phase)
+            .toolbar {
+                if case .dashboard = viewModel.phase,
+                   let session = viewModel.currentSession {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        VStack(alignment: .leading) {
+                            Text(session.institutionName)
+                                .font(.headline)
+                            Text(session.role.displayName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .overlay(alignment: .top) {
+            if let banner = viewModel.banner {
+                ErrorBanner(message: banner.text) {
+                    viewModel.dismissBanner()
+                }
+                .padding()
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
     }
 }
 
 #Preview {
     ContentView()
-        .environmentObject(AppState())
+        .environmentObject(AppViewModel())
 }

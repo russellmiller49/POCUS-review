@@ -9,6 +9,10 @@ struct FellowExperienceView: View {
                 .tabItem { Label("Dashboard", systemImage: "house.fill") }
             FellowCasesView()
                 .tabItem { Label("My Cases", systemImage: "folder") }
+            if let fellow = appState.selectedFellow {
+                PortfolioProgressView(fellow: fellow)
+                    .tabItem { Label("Portfolio", systemImage: "chart.bar.doc.horizontal") }
+            }
             FellowFeedbackView()
                 .tabItem { Label("Feedback", systemImage: "bubble.left.and.bubble.right.fill") }
             FellowAnalyticsView()

@@ -87,6 +87,32 @@ final class AppState: ObservableObject {
             updated.status = newStatus
             return updated
         }
+
+        // Update portfolio progress if case is accepted
+        if newStatus == .accepted, let acceptedCase = cases.first(where: { $0.id == caseID }) {
+            updatePortfolioProgress(for: acceptedCase)
+        }
+    }
+
+    private func updatePortfolioProgress(for case: POCUSCase) {
+        // Update fellow's portfolio progress
+        if let fellowIndex = fellows.firstIndex(where: { $0.id == `case`.fellow.id }) {
+            var updatedFellow = fellows[fellowIndex]
+
+            if let progressIndex = updatedFellow.portfolioProgress.firstIndex(where: { $0.module == `case`.ultrasoundModule }) {
+                let requiredMediaCount = `case`.requiredMedia.count
+                updatedFellow.portfolioProgress[progressIndex].acceptedCount += requiredMediaCount
+            }
+
+            // Update in sample data (in a real app, this would persist)
+            if let selectedIndex = fellows.firstIndex(where: { $0.id == selectedFellow?.id }) {
+                var selected = fellows[selectedIndex]
+                if let progressIndex = selected.portfolioProgress.firstIndex(where: { $0.module == `case`.ultrasoundModule }) {
+                    selected.portfolioProgress[progressIndex].acceptedCount += `case`.requiredMedia.count
+                }
+                selectedFellow = selected
+            }
+        }
     }
 
     func markNotificationAsRead(_ notification: NotificationItem) {

@@ -1,0 +1,5 @@
+// Environment configuration for Supabase + storage
+SUPABASE_URL=https://tqnhxlwvkkswuckszlee.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmh4bHd2a2tzd3Vja3N6bGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTg0MDQsImV4cCI6MjA3NTAzNDQwNH0.k76NI2Ji5gQSF3gBvmZ0yU1ZtdORv21zD_ZhJSGze4A
+SUPABASE_STORAGE_HOST=https://tqnhxlwvkkswuckszlee.storage.supabase.co
+SUPABASE_BUCKET=pocus-media

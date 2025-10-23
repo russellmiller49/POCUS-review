@@ -1,6 +1,87 @@
 import Foundation
 import SwiftUI
 
+// Critical Care Ultrasound Module Categories
+enum UltrasoundModule: String, CaseIterable, Identifiable {
+    case cardiac = "Cardiac"
+    case ivc = "IVC"
+    case lung = "Lung Ultrasound"
+    case pleural = "Pleural Ultrasound"
+    case renal = "Renal"
+    case bladder = "Bladder"
+    case aorta = "Abdominal Aorta"
+    case vascularAccess = "Vascular Access"
+    case dvt = "DVT Ultrasound"
+
+    var id: String { rawValue }
+
+    var requiredImages: Int {
+        switch self {
+        case .cardiac: return 50
+        case .ivc: return 10
+        case .lung: return 20
+        case .pleural: return 20
+        case .renal: return 10
+        case .bladder: return 10
+        case .aorta: return 10
+        case .vascularAccess: return 10
+        case .dvt: return 10
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .cardiac: return "PLAX, PSAX, Apical 4C, Subcostal"
+        case .ivc: return "Longitudinal, inspiratory variation"
+        case .lung: return "A-lines, B-lines, consolidation"
+        case .pleural: return "Simple effusion, complex effusion, pneumothorax/lung point"
+        case .renal: return "Longitudinal, Transverse"
+        case .bladder: return "Longitudinal, Transverse"
+        case .aorta: return "Ascending/Descending/Abdominal"
+        case .vascularAccess: return "IJ, subclavian, femoral"
+        case .dvt: return "Compression, femoral/popliteal"
+        }
+    }
+
+    var requiredViews: [String] {
+        switch self {
+        case .cardiac:
+            return ["PLAX - Standard", "PSAX - Aortic Valve Level", "PSAX - Mitral Valve Level",
+                    "Apical 4-Chamber", "Subcostal 4-Chamber"]
+        case .ivc:
+            return ["IVC Longitudinal", "IVC with Respiratory Variation"]
+        case .lung:
+            return ["A-lines", "B-lines", "Consolidation", "Lung Sliding"]
+        case .pleural:
+            return ["Simple Effusion", "Complex Effusion", "Pneumothorax/Lung Point"]
+        case .renal:
+            return ["Renal Longitudinal", "Renal Transverse"]
+        case .bladder:
+            return ["Bladder Longitudinal", "Bladder Transverse"]
+        case .aorta:
+            return ["Ascending Aorta", "Descending Aorta", "Abdominal Aorta"]
+        case .vascularAccess:
+            return ["Internal Jugular", "Subclavian", "Femoral"]
+        case .dvt:
+            return ["Femoral Compression", "Popliteal Compression"]
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .cardiac: return .red
+        case .ivc: return .blue
+        case .lung: return .cyan
+        case .pleural: return .teal
+        case .renal: return .orange
+        case .bladder: return .yellow
+        case .aorta: return .pink
+        case .vascularAccess: return .green
+        case .dvt: return .purple
+        }
+    }
+}
+
 // Standard Transthoracic Echocardiographic Views (ASE Guidelines 2019)
 enum EchoView: String, CaseIterable, Identifiable {
     // Parasternal Long Axis Views
@@ -121,6 +202,21 @@ enum UserRole: String, CaseIterable, Identifiable {
     }
 }
 
+struct PortfolioProgress: Hashable {
+    var module: UltrasoundModule
+    var acceptedCount: Int
+    var requiredCount: Int
+
+    var progress: Double {
+        guard requiredCount > 0 else { return 0 }
+        return min(Double(acceptedCount) / Double(requiredCount), 1.0)
+    }
+
+    var isComplete: Bool {
+        acceptedCount >= requiredCount
+    }
+}
+
 struct Fellow: Identifiable, Hashable {
     let id: UUID
     var name: String
@@ -128,6 +224,16 @@ struct Fellow: Identifiable, Hashable {
     var year: String
     var institution: String
     var statistics: FellowStatistics
+    var portfolioProgress: [PortfolioProgress] = UltrasoundModule.allCases.map {
+        PortfolioProgress(module: $0, acceptedCount: 0, requiredCount: $0.requiredImages)
+    }
+
+    var totalPortfolioProgress: Double {
+        let totalAccepted = portfolioProgress.reduce(0) { $0 + $1.acceptedCount }
+        let totalRequired = portfolioProgress.reduce(0) { $0 + $1.requiredCount }
+        guard totalRequired > 0 else { return 0 }
+        return Double(totalAccepted) / Double(totalRequired)
+    }
 }
 
 struct FellowStatistics: Hashable {
@@ -215,6 +321,8 @@ struct CaseMedia: Identifiable, Hashable {
     var description: String
     var echoView: EchoView?
     var fileURL: URL?
+    var isRequired: Bool = true  // Primary required view for portfolio
+    var isAdditional: Bool = false  // Additional/submodule view
 }
 
 struct ClinicalDetail: Identifiable, Hashable {
@@ -276,6 +384,7 @@ struct POCUSCase: Identifiable, Hashable {
     let id: UUID
     var title: String
     var studyType: String
+    var ultrasoundModule: UltrasoundModule
     var patientAge: Int
     var patientGender: String
     var clinicalIndication: String
@@ -291,6 +400,14 @@ struct POCUSCase: Identifiable, Hashable {
     var timeline: [CaseTimelineEntry]
     var qualityChecklist: [QualityChecklistItem]
     var tags: [String]
+
+    var requiredMedia: [CaseMedia] {
+        media.filter { $0.isRequired }
+    }
+
+    var additionalMedia: [CaseMedia] {
+        media.filter { $0.isAdditional }
+    }
 }
 
 struct AnalyticsSnapshot: Hashable {
@@ -466,6 +583,7 @@ struct SampleData {
             id: UUID(),
             title: "Point-of-care echo - cardiogenic shock",
             studyType: "Focused Cardiac Ultrasound",
+            ultrasoundModule: .cardiac,
             patientAge: 64,
             patientGender: "Male",
             clinicalIndication: "Evaluate LV function and volume status in hypotensive ICU patient.",
@@ -486,6 +604,7 @@ struct SampleData {
             id: UUID(),
             title: "Dyspnea evaluation",
             studyType: "Lung Ultrasound",
+            ultrasoundModule: .lung,
             patientAge: 44,
             patientGender: "Female",
             clinicalIndication: "Assess for pulmonary edema versus pneumonia.",

@@ -17,6 +17,7 @@ struct CaseUploadWizard: View {
     ]
     @State private var uploadedMedia: [CaseMedia] = []
     @State private var selectedAttending: Attending?
+    @State private var selectedModule: UltrasoundModule = .cardiac
     @State private var showConfirmation = false
     
     var body: some View {
@@ -24,16 +25,31 @@ struct CaseUploadWizard: View {
             Form {
                 Section("Case Overview") {
                     TextField("Case Title", text: $caseTitle)
+
+                    Picker("Ultrasound Module", selection: $selectedModule) {
+                        ForEach(UltrasoundModule.allCases) { module in
+                            HStack {
+                                Circle()
+                                    .fill(module.color)
+                                    .frame(width: 12, height: 12)
+                                Text(module.rawValue)
+                            }
+                            .tag(module)
+                        }
+                    }
+
                     Picker("Urgency", selection: $urgency) {
                         ForEach(CaseUrgency.allCases) { urgency in
                             Text(urgency.displayName).tag(urgency)
                         }
                     }
+
                     Picker("Fellow", selection: selectedFellowBinding) {
                         ForEach(appState.fellows) { fellow in
                             Text(fellow.name).tag(fellow as Fellow?)
                         }
                     }
+
                     Picker("Assign to Attending", selection: $selectedAttending) {
                         Text("Select Attending").tag(nil as Attending?)
                         ForEach(appState.attendings) { attending in
@@ -69,8 +85,16 @@ struct CaseUploadWizard: View {
                     }
                 }
                 
-                Section("Echo Views & Media") {
-                    EchoMediaUploadView(media: $uploadedMedia)
+                Section {
+                    ModuleMediaUploadView(module: selectedModule, media: $uploadedMedia)
+                } header: {
+                    HStack {
+                        Text("\(selectedModule.rawValue) - Required Views")
+                        Spacer()
+                        Text("\(uploadedMedia.filter { $0.isRequired }.count)/\(selectedModule.requiredViews.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Upload Guidelines") {
@@ -115,7 +139,8 @@ struct CaseUploadWizard: View {
         let newCase = POCUSCase(
             id: UUID(),
             title: caseTitle,
-            studyType: "Transthoracic Echocardiogram",
+            studyType: selectedModule.rawValue,
+            ultrasoundModule: selectedModule,
             patientAge: patientAge,
             patientGender: patientGender,
             clinicalIndication: clinicalContext,
@@ -132,7 +157,7 @@ struct CaseUploadWizard: View {
                 .init(date: Date(), actorName: fellow.name, action: "Submitted case", icon: "square.and.arrow.up")
             ],
             qualityChecklist: [],
-            tags: ["Echocardiography", "TTE"]
+            tags: [selectedModule.rawValue, "Critical Care Ultrasound"]
         )
 
         appState.addCase(newCase)

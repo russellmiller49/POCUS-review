@@ -10,6 +10,7 @@ struct MediaDropZone: View {
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
     @State private var showDocumentPicker = false
+    @State private var showImportOptions = false
 
     private var viewMedia: [CaseMedia] {
         media.filter { $0.echoView == echoView }
@@ -71,11 +72,24 @@ struct MediaDropZone: View {
                     Label("Choose from Photos", systemImage: "photo.on.rectangle")
                 }
                 Button(action: { showDocumentPicker = true }) {
-                    Label("Choose from Files", systemImage: "folder")
+                    Label("Import from Files & Cloud", systemImage: "folder.badge.plus")
                 }
             }
             .onTapGesture {
-                showPhotoPicker = true
+                showImportOptions = true
+            }
+            .confirmationDialog("Add media", isPresented: $showImportOptions, titleVisibility: .visible) {
+                Button {
+                    showPhotoPicker = true
+                } label: {
+                    Label("Photos Library", systemImage: "photo.on.rectangle")
+                }
+                Button {
+                    showDocumentPicker = true
+                } label: {
+                    Label("Files, iCloud, or Drive", systemImage: "folder.badge.plus")
+                }
+                Button("Cancel", role: .cancel) {}
             }
             .photosPicker(
                 isPresented: $showPhotoPicker,
@@ -96,6 +110,24 @@ struct MediaDropZone: View {
                     selectedPhotos = []
                 }
             }
+
+            HStack(spacing: 12) {
+                Button {
+                    showPhotoPicker = true
+                } label: {
+                    Label("Add from Photos", systemImage: "photo")
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    showDocumentPicker = true
+                } label: {
+                    Label("Add from Files & Cloud", systemImage: "folder")
+                }
+                .buttonStyle(.bordered)
+            }
+            .font(.caption)
+            .padding(.top, 4)
         }
     }
 
@@ -154,16 +186,52 @@ struct MediaDropZone: View {
     }
 
     private func handleDocumentURL(_ url: URL) {
-        let type: CaseMedia.MediaType
         let uti = UTType(filenameExtension: url.pathExtension) ?? .data
+        let determinedType: CaseMedia.MediaType = (uti.conforms(to: .movie) || uti.conforms(to: .video)) ? .video : .image
 
-        if uti.conforms(to: .movie) || uti.conforms(to: .video) {
-            type = .video
-        } else {
-            type = .image
+        Task.detached(priority: .userInitiated) {
+            guard let storedURL = MediaDropZone.persistImportedFile(originalURL: url) else { return }
+            await MainActor.run {
+                addMedia(type: determinedType, fileURL: storedURL)
+            }
         }
+    }
 
-        addMedia(type: type, fileURL: url)
+    private nonisolated static func persistImportedFile(originalURL: URL) -> URL? {
+        let fileManager = FileManager.default
+        let destinationFolder = fileManager.temporaryDirectory.appendingPathComponent("ImportedMedia", isDirectory: true)
+
+        do {
+            if !fileManager.fileExists(atPath: destinationFolder.path) {
+                try fileManager.createDirectory(at: destinationFolder, withIntermediateDirectories: true)
+            }
+
+            let uniqueName = UUID().uuidString + "_" + originalURL.lastPathComponent
+            let destinationURL = destinationFolder.appendingPathComponent(uniqueName)
+
+            let didAccessSecurityScope = originalURL.startAccessingSecurityScopedResource()
+            defer {
+                if didAccessSecurityScope {
+                    originalURL.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
+            }
+
+            do {
+                try fileManager.copyItem(at: originalURL, to: destinationURL)
+            } catch {
+                // If direct copy fails (e.g., file already in app container), attempt move
+                try fileManager.moveItem(at: originalURL, to: destinationURL)
+            }
+
+            return destinationURL
+        } catch {
+            print("Failed to persist imported file: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     private func addMedia(type: CaseMedia.MediaType, data: Data? = nil, fileURL: URL? = nil) {
@@ -177,30 +245,6 @@ struct MediaDropZone: View {
             fileURL: fileURL
         )
         media.append(newMedia)
-    }
-}
-
-struct MediaThumbnail: View {
-    let media: CaseMedia
-    let onRemove: () -> Void
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.2))
-                .frame(width: 70, height: 70)
-                .overlay(
-                    Image(systemName: media.type == .image ? "photo" : "video.fill")
-                        .foregroundStyle(.secondary)
-                )
-
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.white, .red)
-                    .font(.caption)
-            }
-            .offset(x: 5, y: -5)
-        }
     }
 }
 
@@ -265,3 +309,4 @@ struct DocumentPicker: UIViewControllerRepresentable {
         }
     }
 }
+
