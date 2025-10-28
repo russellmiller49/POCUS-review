@@ -9,7 +9,6 @@ final class AppViewModel: ObservableObject {
         case login
         case codeEntry(email: String)
         case selectingInstitution
-        case selectingRole(InstitutionRoleGroup)
         case dashboard
     }
 
@@ -46,10 +45,9 @@ final class AppViewModel: ObservableObject {
         var institutionName: String { membership.institution.name }
     }
 
-struct StudyDetailState: Identifiable {
+    struct StudyDetailState: Identifiable {
         var id: UUID { study.id }
         var study: Study
-        var metadata: StudyMetadata
         var media: [Media]
         var feedback: [Feedback]
         var signoff: Signoff?
@@ -62,16 +60,6 @@ struct StudyDetailState: Identifiable {
                 return true
             }
         }
-}
-
-struct InstitutionRoleGroup: Identifiable, Equatable {
-        let institution: Institution
-        let memberships: [MembershipWithInstitution]
-
-        var id: UUID { institution.id }
-        static func == (lhs: InstitutionRoleGroup, rhs: InstitutionRoleGroup) -> Bool {
-            lhs.institution.id == rhs.institution.id && lhs.memberships.map(\.id).sorted() == rhs.memberships.map(\.id).sorted()
-        }
     }
 
     @Published private(set) var phase: Phase = .loading
@@ -79,7 +67,6 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     @Published var otpCode: String = ""
     @Published private(set) var memberships: [MembershipWithInstitution] = []
     @Published private(set) var selectedMembership: MembershipWithInstitution?
-    @Published private(set) var roleSelectionGroup: InstitutionRoleGroup?
     @Published private(set) var studies: [Study] = []
     @Published private(set) var studyDetail: StudyDetailState?
     @Published var filter: StudyFilter = .queue
@@ -92,7 +79,6 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     private let authService: AuthServicing
     private let institutionService: InstitutionServicing
     private let studyService: StudyServicing
-    private let storageService: StorageServicing
     private var authSession: AuthSession?
     private var activeSession: ActiveSession?
     private var cancellables = Set<AnyCancellable>()
@@ -100,29 +86,16 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     private let defaults: UserDefaults
     private let institutionDefaultsKey = "pocus.selectedInstitution"
 
-    var institutionRoleGroups: [InstitutionRoleGroup] {
-        let grouped = Dictionary(grouping: memberships, by: { $0.institution.id })
-        return grouped.values.compactMap { memberships in
-            guard let representative = memberships.first else { return nil }
-            return InstitutionRoleGroup(institution: representative.institution, memberships: memberships)
-        }
-        .sorted { $0.institution.name < $1.institution.name }
-    }
-
     init(
-        authService: AuthServicing? = nil,
-        institutionService: InstitutionServicing? = nil,
-        studyService: StudyServicing? = nil,
-        storageService: StorageServicing? = nil,
+        authService: AuthServicing = SupabaseAuthService(),
+        institutionService: InstitutionServicing = SupabaseInstitutionService(),
+        studyService: StudyServicing = SupabaseStudyService(),
         uploadService: TUSUploadService? = nil,
         defaults: UserDefaults = .standard
     ) {
-        let clientProvider = SupabaseClientManager.shared
-
-        self.authService = authService ?? SupabaseAuthService(clientProvider: clientProvider)
-        self.institutionService = institutionService ?? SupabaseInstitutionService(clientProvider: clientProvider)
-        self.studyService = studyService ?? SupabaseStudyService(clientProvider: clientProvider)
-        self.storageService = storageService ?? SupabaseStorageService(clientProvider: clientProvider)
+        self.authService = authService
+        self.institutionService = institutionService
+        self.studyService = studyService
         self.defaults = defaults
         self.uploadService = uploadService ?? TUSUploadService(configuration: AppConfig.shared)
 
@@ -243,23 +216,8 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             session: authSession.session,
             membership: membership
         )
-        roleSelectionGroup = nil
         phase = .dashboard
         await refreshStudies()
-    }
-
-    func handleInstitutionSelection(_ group: InstitutionRoleGroup) async {
-        if group.memberships.count == 1, let membership = group.memberships.first {
-            await selectMembership(membership)
-        } else {
-            roleSelectionGroup = group
-            phase = .selectingRole(group)
-        }
-    }
-
-    func presentInstitutionSelection() {
-        roleSelectionGroup = nil
-        phase = .selectingInstitution
     }
 
     // MARK: - Studies
@@ -284,40 +242,23 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         }
     }
 
-    func createDraftStudy(input: DraftStudyInput) async {
+    func createDraftStudy(examType: String, notes: String?) async {
         guard let session = activeSession else { return }
         isBusy = true
         defer { isBusy = false }
 
-        var metadata = StudyMetadata()
-        metadata.caseTitle = input.title
-        metadata.module = input.module
-        metadata.clinicalContext = input.clinicalContext
-        metadata.urgency = input.urgency
-        metadata.patientAge = input.patientAge
-        metadata.patientGender = input.patientGender
-        metadata.preliminaryFindings = input.preliminaryFindings
-        metadata.measurements = input.measurements
-        metadata.attendingContact = input.attendingContact
-
         let payload = NewStudyRequest(
             institutionId: session.membership.membership.institutionId,
             createdBy: session.profile.id,
-            examType: input.module.rawValue,
+            examType: examType,
             status: .draft,
-            notes: metadata.encode()
+            notes: notes
         )
 
         do {
             let study = try await studyService.createStudy(payload)
             studies.append(study)
-            studyDetail = StudyDetailState(
-                study: study,
-                metadata: metadata,
-                media: [],
-                feedback: [],
-                signoff: nil
-            )
+            studyDetail = StudyDetailState(study: study, media: [], feedback: [], signoff: nil)
         } catch {
             banner = BannerMessage(text: "Unable to create study: \(error.localizedDescription)")
         }
@@ -341,31 +282,17 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         }
     }
 
-    func submitReview(
-        for study: Study,
-        rating: Int?,
-        summary: String,
-        detailedComments: [String],
-        teachingPoints: [String],
-        signoffStatus: SignoffStatus
-    ) async {
+    func submitReview(for study: Study, rating: Int?, comments: String?, signoffStatus: SignoffStatus) async {
         guard let session = activeSession else { return }
         isBusy = true
         defer { isBusy = false }
 
         do {
-            let payload = ReviewFeedbackPayload(
-                summary: summary,
-                detailedComments: detailedComments,
-                teachingPoints: teachingPoints
-            )
-            let commentsString = payload.jsonString ?? summary
-
             let feedbackRequest = NewFeedbackRequest(
                 studyId: study.id,
                 reviewerId: session.profile.id,
                 rating: rating,
-                comments: commentsString
+                comments: comments
             )
             _ = try await studyService.insertFeedback(feedbackRequest)
 
@@ -396,17 +323,17 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         }
     }
 
-    func updateMetadata(_ metadata: StudyMetadata) async {
+    func saveNotes(_ notes: String?) async {
         guard let detail = studyDetail else { return }
         do {
             let updated = try await studyService.updateStudyNotes(
                 studyId: detail.study.id,
-                notes: metadata.encode()
+                notes: notes
             )
             await loadStudyDetail(for: updated)
             studies = studies.map { $0.id == updated.id ? updated : $0 }
         } catch {
-            banner = BannerMessage(text: "Unable to save details: \(error.localizedDescription)")
+            banner = BannerMessage(text: "Unable to save notes: \(error.localizedDescription)")
         }
     }
 
@@ -415,14 +342,12 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         defer { isBusy = false }
 
         do {
-            let metadata = StudyMetadata.decode(from: study.notes)
             async let media = studyService.fetchMedia(for: study.id)
             async let feedback = studyService.fetchFeedback(for: study.id)
             async let signoff = studyService.fetchSignoff(for: study.id)
 
             let detail = StudyDetailState(
                 study: study,
-                metadata: metadata,
                 media: try await media,
                 feedback: try await feedback,
                 signoff: try await signoff
@@ -469,15 +394,6 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         banner = BannerMessage(text: text)
     }
 
-    func signedMediaURL(for path: String) async -> URL? {
-        do {
-            return try await storageService.signedURL(for: path, expiresIn: 60 * 60)
-        } catch {
-            presentBanner("Unable to load media: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
     // MARK: - Private helpers
 
     private func bootstrap() async {
@@ -500,43 +416,21 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             return
         }
 
-        do {
-            let results = try await institutionService.fetchMemberships(for: authSession.profile.id)
-            if results.isEmpty {
-                let fallback = makeFallbackMembership(for: authSession.profile.id)
-                memberships = [fallback]
-                await selectMembership(fallback)
-                return
-            }
+        let results = try await institutionService.fetchMemberships(for: authSession.profile.id)
+        memberships = results
 
-            memberships = results
-
-            if let saved = defaults.string(forKey: institutionDefaultsKey),
-               let group = institutionRoleGroups.first(where: { $0.institution.id.uuidString == saved }) {
-                if group.memberships.count == 1, let membership = group.memberships.first {
-                    await selectMembership(membership)
-                } else {
-                    roleSelectionGroup = group
-                    phase = .selectingRole(group)
-                }
-            } else if let firstGroup = institutionRoleGroups.first {
-                if firstGroup.memberships.count == 1, let membership = firstGroup.memberships.first {
-                    await selectMembership(membership)
-                } else if institutionRoleGroups.count == 1 {
-                    roleSelectionGroup = firstGroup
-                    phase = .selectingRole(firstGroup)
-                } else {
-                    roleSelectionGroup = nil
-                    phase = .selectingInstitution
-                }
+        if let saved = defaults.string(forKey: institutionDefaultsKey),
+           let restored = results.first(where: { $0.membership.institutionId.uuidString == saved }) {
+            await selectMembership(restored)
+        } else if let first = results.first {
+            if results.count == 1 {
+                await selectMembership(first)
             } else {
-                roleSelectionGroup = nil
                 phase = .selectingInstitution
             }
-        } catch {
-            let fallback = makeFallbackMembership(for: authSession.profile.id)
-            memberships = [fallback]
-            await selectMembership(fallback)
+        } else {
+            banner = BannerMessage(text: "No institution memberships found.")
+            phase = .login
         }
     }
 
@@ -597,32 +491,6 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             return .image
         }
         return .other
-    }
-
-    private func makeFallbackMembership(for userId: UUID) -> MembershipWithInstitution {
-        let institution = Institution(
-            id: UUID(),
-            slug: "default",
-            name: "Default Institution",
-            settings: .null
-        )
-        let membership = Membership(
-            userId: userId,
-            institutionId: institution.id,
-            role: MembershipRole.fellow.rawValue
-        )
-        return MembershipWithInstitution(membership: membership, institution: institution)
-    }
-}
-
-struct ReviewFeedbackPayload: Codable {
-    let summary: String
-    let detailedComments: [String]
-    let teachingPoints: [String]
-
-    var jsonString: String? {
-        guard let data = try? JSONEncoder().encode(self) else { return nil }
-        return String(data: data, encoding: .utf8)
     }
 }
 

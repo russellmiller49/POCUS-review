@@ -19,33 +19,28 @@ struct SupabaseInstitutionService: InstitutionServicing {
         let response: PostgrestResponse<[MembershipRow]> = try await client
             .from("memberships")
             .select(
-                "user_id, institution_id, roles, institutions(id, slug, name, settings)"
+                "user_id, institution_id, role, institutions(id, slug, name, settings)"
             )
             .eq("user_id", value: userId)
             .execute()
 
-        return response.value.flatMap { row -> [MembershipWithInstitution] in
-            guard let institution = row.institutions else { return [] }
+        return response.value.compactMap { row in
+            guard let institution = row.institutions else { return nil }
+            let membership = Membership(
+                userId: row.userID,
+                institutionId: row.institutionID,
+                role: row.role
+            )
             let institutionModel = Institution(
                 id: institution.id,
                 slug: institution.slug,
                 name: institution.name,
                 settings: institution.settings ?? .null
             )
-
-            let roles = row.roles.isEmpty ? ["fellow"] : row.roles
-
-            return roles.map { roleString in
-                let membership = Membership(
-                    userId: row.userID,
-                    institutionId: row.institutionID,
-                    role: roleString
-                )
-                return MembershipWithInstitution(
-                    membership: membership,
-                    institution: institutionModel
-                )
-            }
+            return MembershipWithInstitution(
+                membership: membership,
+                institution: institutionModel
+            )
         }
     }
 }
@@ -53,7 +48,7 @@ struct SupabaseInstitutionService: InstitutionServicing {
 private struct MembershipRow: Decodable {
     let user_id: UUID
     let institution_id: UUID
-    let roles: [String]
+    let role: String
     let institutions: InstitutionRow?
 
     var userID: UUID { user_id }

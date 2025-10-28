@@ -280,7 +280,6 @@ struct ModuleViewDropZone: View {
             description: "",
             echoView: nil,
             fileURL: fileURL,
-            data: data,
             isRequired: isRequired,
             isAdditional: !isRequired
         )

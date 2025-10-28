@@ -48,9 +48,7 @@ struct ReviewDetailView: View {
                             await viewModel.submitReview(
                                 for: study,
                                 rating: rating,
-                                summary: comments,
-                                detailedComments: [],
-                                teachingPoints: [],
+                                comments: comments,
                                 signoffStatus: signoffStatus
                             )
                             dismiss()

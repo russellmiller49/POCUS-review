@@ -16,9 +16,6 @@ struct SettingsView: View {
                     Text(session.profile.email)
                     Text(session.role.displayName)
                     Text(session.institutionName)
-                    Button("Switch Institution or Role") {
-                        viewModel.presentInstitutionSelection()
-                    }
                 }
             }
 

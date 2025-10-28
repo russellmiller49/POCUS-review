@@ -13,15 +13,15 @@ struct InstitutionSelectionView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            List(viewModel.institutionRoleGroups, id: \.id) { group in
+            List(viewModel.memberships, id: \.id) { membership in
                 Button {
-                    Task { await viewModel.handleInstitutionSelection(group) }
+                    Task { await viewModel.selectMembership(membership) }
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(group.institution.name)
+                            Text(membership.institution.name)
                                 .font(.headline)
-                            Text(roleSummary(for: group))
+                            Text(membership.membership.membershipRole.displayName)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -37,12 +37,6 @@ struct InstitutionSelectionView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .padding(.vertical, 32)
-    }
-
-    private func roleSummary(for group: AppViewModel.InstitutionRoleGroup) -> String {
-        let names = group.memberships
-            .map { $0.membership.membershipRole.displayName }
-        return names.joined(separator: ", ")
     }
 }
 

@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 // Critical Care Ultrasound Module Categories
-enum UltrasoundModule: String, CaseIterable, Identifiable, Codable {
+enum UltrasoundModule: String, CaseIterable, Identifiable {
     case cardiac = "Cardiac"
     case ivc = "IVC"
     case lung = "Lung Ultrasound"
@@ -253,7 +253,7 @@ struct Attending: Identifiable, Hashable {
     var bio: String
 }
 
-enum CaseUrgency: String, CaseIterable, Identifiable, Codable {
+enum CaseUrgency: String, CaseIterable, Identifiable {
     case routine
     case priority
     case urgent
@@ -321,21 +321,14 @@ struct CaseMedia: Identifiable, Hashable {
     var description: String
     var echoView: EchoView?
     var fileURL: URL?
-    var data: Data? = nil
     var isRequired: Bool = true  // Primary required view for portfolio
     var isAdditional: Bool = false  // Additional/submodule view
 }
 
-struct ClinicalDetail: Identifiable, Hashable, Codable {
-    let id: UUID
+struct ClinicalDetail: Identifiable, Hashable {
+    let id: UUID = UUID()
     var label: String
     var value: String
-
-    init(id: UUID = UUID(), label: String, value: String) {
-        self.id = id
-        self.label = label
-        self.value = value
-    }
 }
 
 enum FeedbackStatus: String, CaseIterable {

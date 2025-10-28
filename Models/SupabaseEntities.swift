@@ -68,7 +68,7 @@ struct Institution: Identifiable, Codable, Hashable, Sendable {
 
 struct Membership: Identifiable, Codable, Hashable, Sendable {
     typealias ID = String
-    var id: String { "\(userId.uuidString)_\(institutionId.uuidString)_\(role.lowercased())" }
+    var id: String { "\(userId.uuidString)_\(institutionId.uuidString)" }
     let userId: UUID
     let institutionId: UUID
     let role: String

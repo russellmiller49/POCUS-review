@@ -16,8 +16,6 @@ struct ContentView: View {
                     OTPVerificationView(email: email)
                 case .selectingInstitution:
                     InstitutionSelectionView()
-                case .selectingRole:
-                    RoleSelectionView()
                 case .dashboard:
                     DashboardView()
                 }
