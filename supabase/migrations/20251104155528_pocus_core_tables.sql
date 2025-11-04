@@ -17,9 +17,14 @@ create table if not exists public.memberships (
   user_id uuid not null references auth.users(id) on delete cascade,
   institution_id uuid not null references public.institutions(id) on delete cascade,
   role text not null check (role in ('fellow', 'attending', 'admin')),
+  roles text[], -- Optional array for multiple roles (matches remote schema)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  primary key (user_id, institution_id)
+  primary key (user_id, institution_id),
+  constraint memberships_roles_allowed check (
+    (roles <@ ARRAY['fellow'::text, 'attending'::text, 'admin'::text])
+    and (array_length(roles, 1) >= 1)
+  )
 );
 alter table public.memberships enable row level security;
 
