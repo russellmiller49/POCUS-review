@@ -7,10 +7,12 @@ final class AppViewModel: ObservableObject {
     enum Phase: Equatable {
         case loading
         case login
+        case signup
         case codeEntry(email: String)
         case selectingInstitution
         case selectingRole(InstitutionRoleGroup)
         case dashboard
+        case pendingApproval
     }
 
     enum StudyFilter: Hashable, CaseIterable {
@@ -86,6 +88,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     @Published private(set) var banner: BannerMessage?
     @Published private(set) var uploadStatuses: [UUID: TUSUploadService.UploadStatus] = [:]
     @Published private(set) var isBusy: Bool = false
+    @Published private(set) var institutions: [Institution] = []
 
     let uploadService: TUSUploadService
 
@@ -196,6 +199,65 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             banner = BannerMessage(text: "Failed to send code: \(error.localizedDescription)")
         }
     }
+    
+    func loadInstitutions() async {
+        do {
+            institutions = try await institutionService.fetchAllInstitutions()
+        } catch {
+            banner = BannerMessage(text: "Failed to load institutions: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Presents the signup flow by loading institutions and moving to the signup phase.
+    func presentSignup() async {
+        await loadInstitutions()
+        phase = .signup
+    }
+    
+    /// Presents the login screen.
+    func presentLogin() {
+        phase = .login
+    }
+    
+    func signup(name: String, institution: Institution?, role: MembershipRole, pgyYear: String?) async {
+        guard let institution = institution else {
+            banner = BannerMessage(text: "Please select an institution.")
+            return
+        }
+        
+        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard trimmed.contains("@") else {
+            banner = BannerMessage(text: "Enter a valid email address.")
+            return
+        }
+        
+        isBusy = true
+        defer { isBusy = false }
+        
+        do {
+            // Send signup OTP
+            try await authService.sendSignupOTP(to: trimmed)
+            phase = .codeEntry(email: trimmed)
+            
+            // Store signup data temporarily (we'll use it after OTP verification)
+            signupData = SignupData(
+                name: name,
+                institution: institution,
+                role: role,
+                pgyYear: pgyYear
+            )
+        } catch {
+            banner = BannerMessage(text: "Failed to send signup code: \(error.localizedDescription)")
+        }
+    }
+    
+    private struct SignupData {
+        let name: String
+        let institution: Institution
+        let role: MembershipRole
+        let pgyYear: String?
+    }
+    private var signupData: SignupData?
 
     func verifyOTP() async {
         guard case let .codeEntry(email) = phase else { return }
@@ -206,6 +268,33 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             let session = try await authService.verifyOTP(email: email, code: otpCode)
             otpCode = ""
             authSession = session
+            
+            // If this was a signup, create profile and membership
+            if let signupData = signupData {
+                try await institutionService.createProfile(
+                    userId: session.profile.id,
+                    email: email,
+                    fullName: signupData.name
+                )
+                
+                let roleString = signupData.role == .administrator ? "admin" : signupData.role.rawValue
+                try await institutionService.createMembershipRequest(
+                    userId: session.profile.id,
+                    institutionId: signupData.institution.id,
+                    role: roleString,
+                    pgyYear: signupData.pgyYear
+                )
+                
+                self.signupData = nil
+                
+                // Check if role needs approval
+                let needsApproval = signupData.role == .attending || signupData.role == .administrator
+                if needsApproval {
+                    phase = .pendingApproval
+                    return
+                }
+            }
+            
             phase = .loading
             try await loadMemberships()
         } catch {
@@ -481,6 +570,9 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     // MARK: - Private helpers
 
     private func bootstrap() async {
+        // Load institutions for signup flow
+        await loadInstitutions()
+        
         do {
             if let session = try await authService.currentSession(),
                let profile = try await authService.currentUser() {

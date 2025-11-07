@@ -25,12 +25,21 @@ struct LoginView: View {
                 if viewModel.isBusy {
                     ProgressView()
                 } else {
-                    Text("Send Code")
+                    Text("Sign In")
                         .frame(maxWidth: .infinity)
                 }
             }
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.email.isEmpty || viewModel.isBusy)
+            
+            Button("Don't have an account? Sign up") {
+                Task {
+                    await viewModel.presentSignup()
+                }
+            }
+            .font(.subheadline)
+            .foregroundColor(.blue)
+            .padding(.top, 8)
 
             Spacer()
         }

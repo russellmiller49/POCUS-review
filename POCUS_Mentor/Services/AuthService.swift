@@ -4,6 +4,7 @@ import Supabase
 
 protocol AuthServicing: Sendable {
     func sendLoginOTP(to email: String) async throws
+    func sendSignupOTP(to email: String) async throws
     func verifyOTP(email: String, code: String) async throws -> AuthSession
     func currentSession() async throws -> Session?
     func currentUser() async throws -> SupabaseUserProfile?
@@ -21,6 +22,10 @@ struct SupabaseAuthService: AuthServicing {
 
     func sendLoginOTP(to email: String) async throws {
         try await client.auth.signInWithOTP(email: email)
+    }
+    
+    func sendSignupOTP(to email: String) async throws {
+        try await client.auth.signInWithOTP(email: email, shouldCreateUser: true)
     }
 
     func verifyOTP(email: String, code: String) async throws -> AuthSession {

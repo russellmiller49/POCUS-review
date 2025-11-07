@@ -22,10 +22,17 @@ struct SupabaseStorageService: StorageServicing {
         let response = try await client.storage
             .from(bucket)
             .createSignedURL(path: path, expiresIn: expires)
-
-        guard let url = URL(string: response.signedURL) else {
+        
+        // Supabase Swift SDK v2.36.0+ returns a SignedURLOutput struct with a signedURL property (String)
+        // Use Mirror reflection to safely access the signedURL property
+        let mirror = Mirror(reflecting: response)
+        
+        guard let signedURLProperty = mirror.children.first(where: { $0.label == "signedURL" }),
+              let urlString = signedURLProperty.value as? String,
+              let url = URL(string: urlString) else {
             throw StorageServiceError.invalidURL
         }
+        
         return url
     }
 }

@@ -12,6 +12,8 @@ struct ContentView: View {
                         .progressViewStyle(.circular)
                 case .login:
                     LoginView()
+                case .signup:
+                    SignupView(institutions: viewModel.institutions)
                 case .codeEntry(let email):
                     OTPVerificationView(email: email)
                 case .selectingInstitution:
@@ -20,6 +22,8 @@ struct ContentView: View {
                     RoleSelectionView()
                 case .dashboard:
                     DashboardView()
+                case .pendingApproval:
+                    PendingApprovalView()
                 }
             }
             .padding(.horizontal)

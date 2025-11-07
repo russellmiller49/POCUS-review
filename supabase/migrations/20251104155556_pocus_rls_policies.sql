@@ -38,8 +38,8 @@ on public.studies for insert
 to authenticated
 with check (
   created_by = auth.uid()
-  and public.is_member_of(studies.institution_id)
-  and (public.has_role(studies.institution_id, 'fellow') or public.has_admin_role())
+  and public.is_member_of(institution_id)
+  and (public.has_role(institution_id, 'fellow') or public.has_admin_role())
 );
 
 -- Users can select studies they have access to

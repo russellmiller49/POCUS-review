@@ -37,3 +37,5 @@ on conflict (user_id, institution_id) do update set role = excluded.role;
 -- values ('test-institution', 'Test Institution', '{}'::jsonb)
 -- on conflict (slug) do nothing;
 
+
+

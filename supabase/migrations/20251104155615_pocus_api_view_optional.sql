@@ -1,7 +1,10 @@
 -- Optional API convenience view for fetching study with nested media and feedback
 create schema if not exists api;
 
-create or replace view api.study_detail as
+-- Drop existing view if it exists (to handle structure changes)
+drop view if exists api.study_detail;
+
+create view api.study_detail as
 select
   s.*,
   (
