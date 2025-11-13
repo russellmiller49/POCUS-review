@@ -219,6 +219,8 @@ struct ModuleViewDropZone: View {
                     selectedPhotos = []
                 }
             }
+
+            actionButtons
         }
     }
 
@@ -272,6 +274,7 @@ struct ModuleViewDropZone: View {
     }
 
     private func addMedia(type: CaseMedia.MediaType, data: Data? = nil, fileURL: URL? = nil) {
+        let persistedURL = fileURL.flatMap { persistImportedFile($0) }
         let newMedia = CaseMedia(
             id: UUID(),
             title: viewName,
@@ -279,12 +282,63 @@ struct ModuleViewDropZone: View {
             thumbnailName: type == .image ? "photo" : "video",
             description: "",
             echoView: nil,
-            fileURL: fileURL,
+            fileURL: persistedURL,
             data: data,
             isRequired: isRequired,
             isAdditional: !isRequired
         )
         media.append(newMedia)
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        HStack(spacing: 12) {
+            Button {
+                showPhotoPicker = true
+            } label: {
+                Label("Add from Photos", systemImage: "photo")
+            }
+            .buttonStyle(.bordered)
+
+            Button {
+                showDocumentPicker = true
+            } label: {
+                Label("Add from Files", systemImage: "folder")
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private func persistImportedFile(_ url: URL) -> URL? {
+        let fileManager = FileManager.default
+        let destinationFolder = fileManager.temporaryDirectory
+            .appendingPathComponent("ModuleMediaUploads", isDirectory: true)
+        do {
+            if !fileManager.fileExists(atPath: destinationFolder.path) {
+                try fileManager.createDirectory(at: destinationFolder, withIntermediateDirectories: true)
+            }
+
+            let ext = url.pathExtension.isEmpty ? "dat" : url.pathExtension
+            let destinationURL = destinationFolder
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension(ext)
+
+            let didAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if didAccess {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
+            }
+            try fileManager.copyItem(at: url, to: destinationURL)
+            return destinationURL
+        } catch {
+            print("Failed to persist imported file: \(error.localizedDescription)")
+            return url.isFileURL ? url : nil
+        }
     }
 }
 

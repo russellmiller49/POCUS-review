@@ -223,9 +223,10 @@ private struct StudyDraftFormView: View {
                                 patientGender: patientGender,
                                 preliminaryFindings: preliminaryFindings,
                                 measurements: measurements.filter { !$0.label.isEmpty || !$0.value.isEmpty },
-                                attendingContact: attendingContact
+                                attendingContact: attendingContact,
+                                attendingId: nil
                             )
-                            await viewModel.createDraftStudy(input: input)
+                            _ = await viewModel.createDraftStudy(input: input)
                             onComplete()
                             dismiss()
                         }

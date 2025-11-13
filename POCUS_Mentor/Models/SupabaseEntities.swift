@@ -86,6 +86,7 @@ struct Study: Identifiable, Codable, Hashable, Sendable {
     let status: StudyStatus
     let submittedAt: Date?
     let notes: String?
+    let assignedAttendingId: UUID?
     let createdAt: Date
 }
 
@@ -131,6 +132,12 @@ struct MembershipWithInstitution: Identifiable, Sendable {
 /// Lightweight representation of the Supabase auth user.
 struct SupabaseUserProfile: Identifiable, Sendable {
     let id: UUID
+    let email: String
+}
+
+struct UserProfileSummary: Identifiable, Hashable, Sendable {
+    let id: UUID
+    let fullName: String?
     let email: String
 }
 

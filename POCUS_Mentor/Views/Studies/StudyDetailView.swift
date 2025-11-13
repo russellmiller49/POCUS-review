@@ -413,6 +413,84 @@ private struct FeedbackRowView: View {
     let feedback: Feedback
 
     var body: some View {
+        if let payload = ReviewFeedbackPayload.decode(from: feedback.comments) {
+            FeedbackPayloadCard(feedback: feedback, payload: payload)
+        } else {
+            LegacyFeedbackCard(feedback: feedback)
+        }
+    }
+}
+
+private struct FeedbackPayloadCard: View {
+    let feedback: Feedback
+    let payload: ReviewFeedbackPayload
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            header
+
+            if !payload.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(payload.summary)
+            }
+
+            if !payload.detailedComments.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Detailed Comments")
+                        .font(.subheadline.weight(.semibold))
+                    ForEach(payload.detailedComments, id: \.self) { comment in
+                        Label(comment, systemImage: "checkmark.circle")
+                            .font(.subheadline)
+                    }
+                }
+            }
+
+            if !payload.teachingPoints.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Teaching Points")
+                        .font(.subheadline.weight(.semibold))
+                    ForEach(payload.teachingPoints, id: \.self) { point in
+                        Label(point, systemImage: "lightbulb")
+                            .font(.subheadline)
+                    }
+                }
+            }
+
+            let annotations = payload.annotations.compactMap { $0.toFeedbackAnnotation() }
+            if !annotations.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Annotations")
+                        .font(.subheadline.weight(.semibold))
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(annotations) { annotation in
+                                AnnotationCard(annotation: annotation)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var header: some View {
+        HStack {
+            if let rating = feedback.rating {
+                Label("Rating \(rating)/5", systemImage: "star.fill")
+                    .foregroundStyle(.yellow)
+            }
+            Spacer()
+            Text(feedback.createdAt, style: .date)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct LegacyFeedbackCard: View {
+    let feedback: Feedback
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let rating = feedback.rating {
                 Label("Rating \(rating)/5", systemImage: "star.fill")

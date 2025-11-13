@@ -5,6 +5,11 @@ import Supabase
 protocol InstitutionServicing: Sendable {
     func fetchMemberships(for userId: UUID) async throws -> [MembershipWithInstitution]
     func fetchAllInstitutions() async throws -> [Institution]
+    func fetchMembers(
+        institutionId: UUID,
+        roles: [MembershipRole]
+    ) async throws -> [UserProfileSummary]
+    func fetchProfile(userId: UUID) async throws -> UserProfileSummary?
     func createMembershipRequest(
         userId: UUID,
         institutionId: UUID,
@@ -35,10 +40,11 @@ struct SupabaseInstitutionService: InstitutionServicing {
 
         return response.value.flatMap { row -> [MembershipWithInstitution] in
             guard let institution = row.institutions else { return [] }
+            let override = InstitutionOverrides.override(for: institution.id)
             let institutionModel = Institution(
                 id: institution.id,
-                slug: institution.slug,
-                name: institution.name,
+                slug: override?.slug ?? institution.slug,
+                name: override?.name ?? institution.name,
                 settings: institution.settings ?? .null
             )
 
@@ -68,13 +74,59 @@ struct SupabaseInstitutionService: InstitutionServicing {
             .execute()
         
         return response.value.map { row in
-            Institution(
+            let override = InstitutionOverrides.override(for: row.id)
+            return Institution(
                 id: row.id,
-                slug: row.slug,
-                name: row.name,
+                slug: override?.slug ?? row.slug,
+                name: override?.name ?? row.name,
                 settings: row.settings ?? .null
             )
         }
+    }
+
+    func fetchMembers(
+        institutionId: UUID,
+        roles: [MembershipRole]
+    ) async throws -> [UserProfileSummary] {
+        guard !roles.isEmpty else { return [] }
+
+        let allowed = Set(
+            roles.flatMap { role -> [String] in
+                if role == .administrator {
+                    return [role.rawValue, "admin"]
+                }
+                return [role.rawValue]
+            }
+            .map { $0.lowercased() }
+        )
+
+        let response: PostgrestResponse<[InstitutionMemberRow]> = try await client
+            .rpc(
+                "list_institution_members",
+                params: ListInstitutionMembersParams(target_institution: institutionId)
+            )
+            .execute()
+
+        return response.value
+            .filter { row in
+                let roleStrings = row.allRoles.map { $0.lowercased() }
+                return roleStrings.contains { allowed.contains($0) }
+            }
+            .map { row in
+                UserProfileSummary(
+                    id: row.user_id,
+                    fullName: row.full_name,
+                    email: row.email ?? ""
+                )
+            }
+            .sorted {
+                ($0.fullName ?? $0.email)
+                    .localizedCaseInsensitiveCompare($1.fullName ?? $1.email) == .orderedAscending
+            }
+    }
+
+    func fetchProfile(userId: UUID) async throws -> UserProfileSummary? {
+        try await fetchProfiles(ids: [userId]).first?.summary
     }
     
     func createMembershipRequest(
@@ -146,4 +198,74 @@ private struct MembershipRow: Decodable {
 
     var userID: UUID { user_id }
     var institutionID: UUID { institution_id }
+}
+
+private struct InstitutionMemberRow: Decodable {
+    let user_id: UUID
+    let full_name: String?
+    let email: String?
+    let role: String?
+    let roles: [String]?
+
+    var allRoles: [String] {
+        var combined = roles ?? []
+        if let role {
+            combined.append(role)
+        }
+        return combined
+    }
+}
+
+private struct ProfileRow: Decodable {
+    let id: UUID
+    let email: String?
+    let full_name: String?
+
+    var summary: UserProfileSummary {
+        UserProfileSummary(
+            id: id,
+            fullName: full_name,
+            email: email ?? ""
+        )
+    }
+}
+
+private struct ListInstitutionMembersParams: Sendable {
+    let target_institution: UUID
+}
+nonisolated extension ListInstitutionMembersParams: Encodable {}
+
+private extension SupabaseInstitutionService {
+    func fetchProfiles(ids: [UUID]) async throws -> [ProfileRow] {
+        guard !ids.isEmpty else { return [] }
+        let response: PostgrestResponse<[ProfileRow]> = try await client
+            .from("profiles")
+            .select("id, full_name, email")
+            .`in`("id", values: ids.map(\.uuidString))
+            .execute()
+        return response.value
+    }
+}
+
+private enum InstitutionOverrides {
+    private static let overrides: [UUID: (slug: String, name: String)] = {
+        var map: [UUID: (slug: String, name: String)] = [:]
+        if let naval = UUID(uuidString: "fd5043e9-9268-4b82-a703-88b18c8c0fd0") {
+            map[naval] = (
+                slug: "naval-medical-center-san-diego",
+                name: "Naval Medical Center San Diego"
+            )
+        }
+        if let ucsd = UUID(uuidString: "e5720023-40ae-432d-bd0c-c2602e912808") {
+            map[ucsd] = (
+                slug: "uc-san-diego-health",
+                name: "UC San Diego Health"
+            )
+        }
+        return map
+    }()
+
+    static func override(for id: UUID) -> (slug: String, name: String)? {
+        overrides[id]
+    }
 }

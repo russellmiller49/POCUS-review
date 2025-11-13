@@ -36,4 +36,5 @@ struct DraftStudyInput {
     var preliminaryFindings: String
     var measurements: [ClinicalDetail]
     var attendingContact: String
+    var attendingId: UUID?
 }

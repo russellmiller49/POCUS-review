@@ -58,4 +58,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(AppViewModel())
+        .environmentObject(AppState())
 }

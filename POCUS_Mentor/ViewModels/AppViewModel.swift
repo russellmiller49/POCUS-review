@@ -89,6 +89,10 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     @Published private(set) var uploadStatuses: [UUID: TUSUploadService.UploadStatus] = [:]
     @Published private(set) var isBusy: Bool = false
     @Published private(set) var institutions: [Institution] = []
+    @Published private(set) var currentProfile: UserProfileSummary?
+    @Published private(set) var attendingDirectory: [UserProfileSummary] = []
+    @Published private(set) var signoffs: [UUID: Signoff] = [:]
+    @Published private(set) var mediaURLs: [UUID: URL] = [:]
 
     let uploadService: TUSUploadService
 
@@ -316,6 +320,10 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         studyDetail = nil
         authSession = nil
         activeSession = nil
+        attendingDirectory = []
+        currentProfile = nil
+        signoffs = [:]
+        mediaURLs = [:]
         defaults.removeObject(forKey: institutionDefaultsKey)
         phase = .login
     }
@@ -335,6 +343,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         roleSelectionGroup = nil
         phase = .dashboard
         await refreshStudies()
+        await loadAttendingDirectory()
     }
 
     func handleInstitutionSelection(_ group: InstitutionRoleGroup) async {
@@ -349,6 +358,18 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     func presentInstitutionSelection() {
         roleSelectionGroup = nil
         phase = .selectingInstitution
+    }
+
+    func loadAttendingDirectory() async {
+        guard let session = activeSession else { return }
+        do {
+            attendingDirectory = try await institutionService.fetchMembers(
+                institutionId: session.membership.membership.institutionId,
+                roles: [.attending]
+            )
+        } catch {
+            banner = BannerMessage(text: "Unable to load attendings: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Studies
@@ -368,13 +389,15 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
                let updated = results.first(where: { $0.id == detail.study.id }) {
                 await loadStudyDetail(for: updated)
             }
+            await refreshSignoffs(for: results)
         } catch {
             banner = BannerMessage(text: "Unable to load studies: \(error.localizedDescription)")
         }
     }
 
-    func createDraftStudy(input: DraftStudyInput) async {
-        guard let session = activeSession else { return }
+    @discardableResult
+    func createDraftStudy(input: DraftStudyInput) async -> Study? {
+        guard let session = activeSession else { return nil }
         isBusy = true
         defer { isBusy = false }
 
@@ -394,7 +417,8 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             createdBy: session.profile.id,
             examType: input.module.rawValue,
             status: .draft,
-            notes: metadata.encode()
+            notes: metadata.encode(),
+            assignedAttendingId: input.attendingId
         )
 
         do {
@@ -407,8 +431,10 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
                 feedback: [],
                 signoff: nil
             )
+            return study
         } catch {
             banner = BannerMessage(text: "Unable to create study: \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -436,6 +462,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         summary: String,
         detailedComments: [String],
         teachingPoints: [String],
+        annotations: [ReviewAnnotationPayload],
         signoffStatus: SignoffStatus
     ) async {
         guard let session = activeSession else { return }
@@ -446,7 +473,8 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             let payload = ReviewFeedbackPayload(
                 summary: summary,
                 detailedComments: detailedComments,
-                teachingPoints: teachingPoints
+                teachingPoints: teachingPoints,
+                annotations: annotations
             )
             let commentsString = payload.jsonString ?? summary
 
@@ -522,8 +550,9 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         }
     }
 
-    func enqueueUpload(fileURL: URL, contentType: String, study: Study) {
-        guard let session = activeSession else { return }
+    @discardableResult
+    func enqueueUpload(fileURL: URL, contentType: String, study: Study) -> UUID? {
+        guard let session = activeSession else { return nil }
         do {
             let handle = try uploadService.enqueueUpload(
                 fileURL: fileURL,
@@ -533,8 +562,10 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
                 accessToken: session.session.accessToken
             )
             uploadStatuses[handle.id] = .queued
+            return handle.id
         } catch {
             banner = BannerMessage(text: "Failed to start upload: \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -590,6 +621,16 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         guard let authSession else {
             phase = .login
             return
+        }
+
+        if let profile = try? await institutionService.fetchProfile(userId: authSession.profile.id) {
+            currentProfile = profile
+        } else {
+            currentProfile = UserProfileSummary(
+                id: authSession.profile.id,
+                fullName: nil,
+                email: authSession.profile.email
+            )
         }
 
         do {
@@ -705,16 +746,53 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         )
         return MembershipWithInstitution(membership: membership, institution: institution)
     }
-}
 
-struct ReviewFeedbackPayload: Codable {
-    let summary: String
-    let detailedComments: [String]
-    let teachingPoints: [String]
+    private func refreshSignoffs(for studies: [Study]) async {
+        guard let userId = activeSession?.profile.id else {
+            signoffs = [:]
+            return
+        }
+        let myStudyIds = studies
+            .filter { $0.createdBy == userId }
+            .map(\.id)
+        guard !myStudyIds.isEmpty else {
+            signoffs = [:]
+            return
+        }
 
-    var jsonString: String? {
-        guard let data = try? JSONEncoder().encode(self) else { return nil }
-        return String(data: data, encoding: .utf8)
+        do {
+            let fetched = try await studyService.fetchSignoffs(for: myStudyIds)
+            var map: [UUID: Signoff] = [:]
+            for item in fetched {
+                map[item.studyId] = item
+            }
+            signoffs = map
+        } catch {
+            // best-effort: metrics view can tolerate missing signoffs
+        }
+    }
+
+    func signedURL(for media: Media, cachePolicy: CachePolicy = .useCache) async -> URL? {
+        if cachePolicy == .useCache, let cached = mediaURLs[media.id] {
+            return cached
+        }
+
+        do {
+            let url = try await storageService.signedURL(
+                for: media.storagePath,
+                expiresIn: 1800
+            )
+            mediaURLs[media.id] = url
+            return url
+        } catch {
+            banner = BannerMessage(text: "Unable to load media: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    enum CachePolicy {
+        case useCache
+        case refresh
     }
 }
 

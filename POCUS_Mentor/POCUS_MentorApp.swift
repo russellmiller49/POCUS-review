@@ -10,11 +10,13 @@ import SwiftUI
 @main
 struct POCUS_MentorApp: App {
     @StateObject private var viewModel = AppViewModel()
+    @StateObject private var appState = AppState()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(viewModel)
+                .environmentObject(appState)
         }
     }
 }
