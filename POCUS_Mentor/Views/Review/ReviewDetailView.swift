@@ -11,6 +11,7 @@ struct ReviewDetailView: View {
     @State private var comments: String = ""
     @State private var signoffStatus: SignoffStatus = .approved
     @State private var annotations: [FeedbackAnnotation] = []
+    @State private var mediaComments: [UUID: String] = [:]
 
     var body: some View {
         NavigationStack {
@@ -18,7 +19,13 @@ struct ReviewDetailView: View {
                 if let detail = currentDetail {
                     CaseOverviewSection(detail: detail)
                     ClinicalDetailsSection(detail: detail)
-                    MediaSection(detail: detail, annotations: $annotations)
+                    MediaSection(
+                        detail: detail,
+                        annotations: $annotations,
+                        mediaComments: $mediaComments
+                    ) { media, text in
+                        saveComment(text, for: media)
+                    }
                     if !annotations.isEmpty {
                         AnnotationDraftSection(annotations: $annotations, media: detail.media)
                     }
@@ -85,6 +92,17 @@ struct ReviewDetailView: View {
         }
     }
 
+    private func saveComment(_ text: String, for media: Media) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            await viewModel.addMediaComment(for: media, comment: trimmed)
+            await MainActor.run {
+                mediaComments[media.id] = ""
+            }
+        }
+    }
+
     private var currentDetail: AppViewModel.StudyDetailState? {
         if let detail = viewModel.studyDetail, detail.study.id == study.id {
             return detail
@@ -106,13 +124,6 @@ private struct CaseOverviewSection: View {
                 Label(module.rawValue, systemImage: "waveform.path.ecg")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-            }
-            if let urgency = metadata.urgency {
-                Label(urgency.displayName, systemImage: "bolt.heart")
-                    .font(.caption)
-                    .padding(6)
-                    .background(urgency.color.opacity(0.15))
-                    .clipShape(Capsule())
             }
             if let submitted = detail.study.submittedAt {
                 Text("Submitted \(submitted.formatted(date: .abbreviated, time: .shortened))")
@@ -168,6 +179,8 @@ private struct ClinicalDetailsSection: View {
 private struct MediaSection: View {
     let detail: AppViewModel.StudyDetailState
     @Binding var annotations: [FeedbackAnnotation]
+    @Binding var mediaComments: [UUID: String]
+    let saveComment: (Media, String) -> Void
 
     var body: some View {
         Section("Media") {
@@ -176,7 +189,16 @@ private struct MediaSection: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(detail.media, id: \.id) { media in
-                    MediaAttachmentRow(media: media, annotations: $annotations)
+                    MediaAttachmentRow(
+                        media: media,
+                        annotations: $annotations,
+                        commentText: Binding(
+                            get: { mediaComments[media.id] ?? "" },
+                            set: { mediaComments[media.id] = $0 }
+                        ),
+                        existingFeedback: detail.feedback.filter { $0.mediaId == media.id },
+                        onSaveComment: saveComment
+                    )
                 }
             }
         }
@@ -187,6 +209,9 @@ private struct MediaAttachmentRow: View {
     @EnvironmentObject private var viewModel: AppViewModel
     let media: Media
     @Binding var annotations: [FeedbackAnnotation]
+    @Binding var commentText: String
+    let existingFeedback: [Feedback]
+    let onSaveComment: (Media, String) -> Void
     @State private var signedURL: URL?
     @State private var isLoading = true
     @State private var loadError: String?
@@ -208,6 +233,23 @@ private struct MediaAttachmentRow: View {
                         }
                     }
                 }
+            }
+            if !existingFeedback.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(existingFeedback, id: \.id) { feedback in
+                        MediaFeedbackRow(feedback: feedback)
+                    }
+                }
+            }
+            Divider()
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Add comment", text: $commentText, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                Button("Save Comment") {
+                    onSaveComment(media, commentText)
+                }
+                .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isBusy)
             }
         }
         .padding(8)
@@ -410,6 +452,21 @@ private struct AnnotationDraftSection: View {
         let minutes = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", minutes, secs)
+    }
+}
+
+private struct MediaFeedbackRow: View {
+    let feedback: Feedback
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(feedback.comments ?? "No comment")
+            Text(feedback.createdAt, format: .dateTime.month().day().year().hour().minute())
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemBackground)))
     }
 }
 

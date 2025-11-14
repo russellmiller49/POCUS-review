@@ -1,42 +1,40 @@
 import SwiftUI
 
 struct FellowDashboardView: View {
-    @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var viewModel: AppViewModel
+    private let quickResources = ResourceLink.curatedExamples
     
-    private var fellow: Fellow? { appState.selectedFellow }
-    private var recentCases: [POCUSCase] { Array(appState.filteredCases.prefix(3)) }
-    private var fellowDisplayName: String {
-        if let name = viewModel.currentProfile?.fullName, !name.isEmpty {
-            return name
-        }
-        if let email = viewModel.currentProfile?.email {
-            return email
-        }
-        return fellow?.name ?? viewModel.currentSession?.profile.email ?? "Fellow"
+    private var myStudies: [Study] {
+        viewModel.myStudies.sorted { $0.createdAt > $1.createdAt }
     }
-    private var submittedStudies: [Study] {
-        guard let userId = viewModel.currentSession?.profile.id else { return [] }
-        return viewModel.studies.filter { $0.createdBy == userId && $0.status != .draft }
+    
+    private var recentStudies: [Study] {
+        Array(myStudies.prefix(3))
     }
-    private var submittedStudyCount: Int { submittedStudies.count }
-    private var pendingStudyCount: Int {
-        submittedStudies.filter { [.submitted, .reviewable, .needsRevision].contains($0.status) }.count
+    
+    private var pendingStudies: [Study] {
+        myStudies.filter { [.submitted, .reviewable, .needsRevision].contains($0.status) }
     }
-    private var acceptedStudyCount: Int {
-        submittedStudies.filter { [.approved, .signedOff].contains($0.status) }.count
+    
+    private var acceptedStudies: [Study] {
+        myStudies.filter { [.approved, .signedOff].contains($0.status) }
     }
+    
     private var acceptanceRateText: String {
-        guard submittedStudyCount > 0 else { return "--" }
-        let rate = Double(acceptedStudyCount) / Double(submittedStudyCount)
+        let submitted = myStudies.filter { $0.status != .draft }.count
+        guard submitted > 0 else { return "--" }
+        let rate = Double(acceptedStudies.count) / Double(submitted)
         return String(format: "%.0f%%", rate * 100)
     }
-    private var acceptanceRateDetail: String {
-        guard submittedStudyCount > 0 else { return "Submit a study to unlock analytics." }
-        return "Approved \(acceptedStudyCount) / \(submittedStudyCount)"
+    
+    private var acceptanceDetail: String {
+        let submitted = myStudies.filter { $0.status != .draft }.count
+        guard submitted > 0 else { return "Submit a study to unlock analytics." }
+        return "Approved \(acceptedStudies.count) / \(submitted)"
     }
-    private var turnaroundDurations: [Double] {
-        submittedStudies.compactMap { study in
+    
+    private var turnaroundHours: Double? {
+        let hours = myStudies.compactMap { study -> Double? in
             guard
                 let submittedAt = study.submittedAt,
                 let signoff = viewModel.signoffs[study.id],
@@ -44,38 +42,27 @@ struct FellowDashboardView: View {
             else { return nil }
             return signedAt.timeIntervalSince(submittedAt) / 3600
         }
+        guard !hours.isEmpty else { return nil }
+        return hours.reduce(0, +) / Double(hours.count)
     }
-    private var turnaroundText: String {
-        guard let average = averageTurnaroundHours else { return "--" }
-        return String(format: "%.1fh", average)
+    
+    private var highlightedFeedback: (Study, Feedback)? {
+        for study in myStudies {
+            if let feedback = viewModel.feedback(for: study).first {
+                return (study, feedback)
+            }
+        }
+        return nil
     }
-    private var turnaroundDetail: String {
-        if turnaroundDurations.isEmpty {
-            return submittedStudyCount == 0 ? "Submit a study to track review time." : "Awaiting completed reviews."
+    
+    private var fellowDisplayName: String {
+        if let name = viewModel.currentProfile?.fullName, !name.isEmpty {
+            return name
         }
-        return "Based on \(turnaroundDurations.count) signed cases."
-    }
-    private var averageTurnaroundHours: Double? {
-        guard !turnaroundDurations.isEmpty else { return nil }
-        return turnaroundDurations.reduce(0, +) / Double(turnaroundDurations.count)
-    }
-    private var learningHighlightTitle: String {
-        if pendingStudyCount > 0 {
-            return "Follow up on pending cases"
+        if let email = viewModel.currentProfile?.email {
+            return email
         }
-        if acceptedStudyCount > 0 {
-            return "Review accepted feedback"
-        }
-        return "Upload your first case"
-    }
-    private var learningHighlightSubtitle: String {
-        if pendingStudyCount > 0 {
-            return "\(pendingStudyCount) case\(pendingStudyCount == 1 ? "" : "s") awaiting review."
-        }
-        if acceptedStudyCount > 0 {
-            return "Great job—keep the momentum going."
-        }
-        return "Submit a case to unlock personalized insights."
+        return viewModel.currentSession?.profile.email ?? "Fellow"
     }
     
     var body: some View {
@@ -85,16 +72,11 @@ struct FellowDashboardView: View {
                 metricsGrid
                 recentCaseSection
                 feedbackHighlightSection
-                resourcesSection
+                quickResourcesSection
             }
             .padding(24)
         }
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Label(fellowDisplayName, systemImage: "person.circle")
-            }
-        }
     }
     
     private var headerSection: some View {
@@ -104,40 +86,40 @@ struct FellowDashboardView: View {
                 .foregroundStyle(.secondary)
             Text(fellowDisplayName)
                 .font(.largeTitle.bold())
-            Text("Track your progress, review annotated feedback, and keep building your ultrasound mastery.")
+            Text("Track progress, review annotated feedback, and keep building your ultrasound mastery.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
     
     private var metricsGrid: some View {
-        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
             MetricCard(
                 title: "Cases Submitted",
-                value: "\(submittedStudyCount)",
-                trendDescription: "Pending: \(pendingStudyCount)",
+                value: "\(myStudies.filter { $0.status != .draft }.count)",
+                trendDescription: "Pending: \(pendingStudies.count)",
                 systemImage: "doc.on.doc",
                 tint: .blue
             )
             MetricCard(
                 title: "Acceptance Rate",
                 value: acceptanceRateText,
-                trendDescription: acceptanceRateDetail,
+                trendDescription: acceptanceDetail,
                 systemImage: "hand.thumbsup.fill",
                 tint: .green
             )
             MetricCard(
-                title: "Learning Focus",
-                value: learningHighlightTitle,
-                trendDescription: learningHighlightSubtitle,
-                systemImage: "lightbulb.fill",
+                title: "Pending Reviews",
+                value: "\(pendingStudies.count)",
+                trendDescription: pendingStudies.isEmpty ? "All caught up" : "Follow up to keep momentum.",
+                systemImage: "clock.badge.exclamationmark",
                 tint: .orange
             )
             MetricCard(
                 title: "Turnaround",
-                value: turnaroundText,
-                trendDescription: turnaroundDetail,
-                systemImage: "clock.arrow.circlepath",
+                value: turnaroundHours.map { String(format: "%.1fh", $0) } ?? "--",
+                trendDescription: turnaroundHours == nil ? "Awaiting signed cases" : "Average review time",
+                systemImage: "timer",
                 tint: .purple
             )
         }
@@ -145,55 +127,129 @@ struct FellowDashboardView: View {
     
     private var recentCaseSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Recent Cases", subtitle: "Stay on top of pending feedback and submissions.")
-            ForEach(recentCases) { caseData in
-                NavigationLink {
-                    CaseDetailView(caseData: caseData)
-                } label: {
-                    CaseCardView(caseData: caseData, showFellowDetails: false)
+            SectionHeader(title: "Recent Cases", subtitle: "Stay on top of your latest submissions.")
+            if recentStudies.isEmpty {
+                EmptyPlaceholderView(
+                    title: "No cases yet",
+                    message: "Use the Studies tab to create your first case.",
+                    systemImage: "tray"
+                )
+            } else {
+                ForEach(recentStudies, id: \.id) { study in
+                    Button {
+                        Task { await viewModel.loadStudyDetail(for: study) }
+                    } label: {
+                        FellowStudyCard(study: study)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
     
     private var feedbackHighlightSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Feedback Focus", subtitle: "Themes pulled from recent attending reviews.")
-            if let caseWithFeedback = appState.filteredCases.first(where: { $0.feedback != nil }) {
-                FeedbackSummaryCard(caseData: caseWithFeedback)
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Feedback Focus", subtitle: "Highlights from recent reviews.")
+            if let item = highlightedFeedback {
+                FeedbackHighlightCard(study: item.0, feedback: item.1)
             } else {
-                EmptyPlaceholderView(title: "No feedback yet", message: "Once attendings respond you'll see annotated highlights here.", systemImage: "bubble.left")
+                EmptyPlaceholderView(
+                    title: "No feedback yet",
+                    message: "Once attendings respond you'll see insights here.",
+                    systemImage: "bubble.left"
+                )
             }
         }
     }
-    
-    private var resourcesSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Quick Resources", subtitle: "Guidelines and checklists suggested by mentors.")
-            ForEach(appState.resourceLinks) { resource in
-                ResourceRow(resource: resource)
+
+    private var quickResourcesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Quick Resources", subtitle: "Guides shared by attendings.")
+            ForEach(quickResources) { resource in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(resource.title)
+                        .font(.headline)
+                    Text(resource.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color(.systemBackground))
+                        .shadow(color: .black.opacity(0.05), radius: 6, y: 3)
+                )
             }
         }
     }
 }
 
-private struct ResourceRow: View {
-    let resource: ResourceLink
+private struct FellowStudyCard: View {
+    let study: Study
+    private var metadata: StudyMetadata { StudyMetadata.decode(from: study.notes) }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(resource.title)
+            HStack {
+                Text(metadata.caseTitle?.isEmpty == false ? metadata.caseTitle! : study.examType)
+                    .font(.headline)
+                    .lineLimit(2)
+                Spacer()
+                StatusChip(status: study.status)
+            }
+            Text(study.createdAt, style: .date)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if let context = metadata.clinicalContext, !context.isEmpty {
+                Text(context)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.05), radius: 6, y: 3)
+        )
+    }
+}
+
+private struct FeedbackHighlightCard: View {
+    let study: Study
+    let feedback: Feedback
+    
+    var body: some View {
+        let metadata = StudyMetadata.decode(from: study.notes)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(metadata.caseTitle ?? study.examType)
                 .font(.headline)
-            Text(resource.description)
-                .font(.subheadline)
+            if let payload = ReviewFeedbackPayload.decode(from: feedback.comments) {
+                if !payload.summary.isEmpty {
+                    Text(payload.summary)
+                        .font(.subheadline)
+                }
+                if !payload.detailedComments.isEmpty {
+                    Divider()
+                    ForEach(payload.detailedComments, id: \.self) { comment in
+                        Label(comment, systemImage: "checkmark.seal")
+                            .font(.caption)
+                    }
+                }
+            } else if let comments = feedback.comments {
+                Text(comments)
+                    .font(.subheadline)
+            }
+            Text("Reviewed \(feedback.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
+                .shadow(color: .black.opacity(0.05), radius: 6, y: 3)
         )
     }
 }

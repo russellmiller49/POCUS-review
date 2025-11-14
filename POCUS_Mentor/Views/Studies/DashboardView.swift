@@ -2,8 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var viewModel: AppViewModel
-    @EnvironmentObject private var appState: AppState
-    @State private var tabSelection: Tab = .studies
+    @State private var tabSelection: Tab = .experience
     @State private var hasPresentedExperience = false
 
     enum Tab: Hashable {
@@ -15,11 +14,15 @@ struct DashboardView: View {
 
     var body: some View {
         TabView(selection: $tabSelection) {
-            if let userRole {
-                RoleExperienceContainer(role: userRole)
+            if let role = userRole {
+                RoleExperienceContainer(role: role)
                     .tabItem {
-                        Label(userRole.displayName, systemImage: userRole.systemImage)
+                        Label(experienceTitle, systemImage: experienceIcon)
                     }
+                    .tag(Tab.experience)
+            } else {
+                ProgressView("Loading role…")
+                    .tabItem { Label(experienceTitle, systemImage: experienceIcon) }
                     .tag(Tab.experience)
             }
 
@@ -35,13 +38,19 @@ struct DashboardView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
-        .onAppear {
-            syncExperienceRole()
+        .task {
             autoSelectExperienceIfNeeded()
         }
-        .onChange(of: viewModel.currentSession?.role) { _ in
-            syncExperienceRole()
+        .onChange(of: userRole) { _, _ in
             autoSelectExperienceIfNeeded()
+        }
+        .sheet(item: Binding(
+            get: { viewModel.studyDetail },
+            set: { newValue in
+                if newValue == nil { viewModel.dismissStudyDetail() }
+            })
+        ) { detail in
+            StudyDetailView(detail: detail)
         }
     }
 
@@ -49,14 +58,12 @@ struct DashboardView: View {
         viewModel.currentSession?.role.userRole
     }
 
-    private func syncExperienceRole() {
-        guard let role = userRole else {
-            appState.resetState()
-            return
-        }
-        if appState.selectedRole != role {
-            appState.selectedRole = role
-        }
+    private var experienceTitle: String {
+        userRole?.displayName ?? "Experience"
+    }
+
+    private var experienceIcon: String {
+        userRole?.systemImage ?? "person.circle"
     }
 
     private func autoSelectExperienceIfNeeded() {
@@ -69,7 +76,6 @@ struct DashboardView: View {
 #Preview {
     DashboardView()
         .environmentObject(AppViewModel())
-        .environmentObject(AppState())
 }
 
 private extension MembershipRole {

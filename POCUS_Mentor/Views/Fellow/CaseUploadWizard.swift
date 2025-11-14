@@ -7,7 +7,6 @@ struct CaseUploadWizard: View {
     
     @State private var caseTitle: String = ""
     @State private var clinicalContext: String = ""
-    @State private var urgency: CaseUrgency = .routine
     @State private var patientAge: Int = 60
     @State private var patientGender: String = "Female"
     @State private var preliminaryFindings: String = ""
@@ -36,12 +35,6 @@ struct CaseUploadWizard: View {
                                 Text(module.rawValue)
                             }
                             .tag(module)
-                        }
-                    }
-
-                    Picker("Urgency", selection: $urgency) {
-                        ForEach(CaseUrgency.allCases) { urgency in
-                            Text(urgency.displayName).tag(urgency)
                         }
                     }
 
@@ -77,17 +70,19 @@ struct CaseUploadWizard: View {
                         .frame(minHeight: 120)
                 }
                 
-                Section("Measurements") {
-                    ForEach(measurements.indices, id: \.self) { index in
-                        HStack {
-                            TextField("Label", text: $measurements[index].label)
-                            Divider()
-                            TextField("Value", text: $measurements[index].value)
-                                .multilineTextAlignment(.trailing)
+                if selectedModule == .cardiac {
+                    Section("Measurements") {
+                        ForEach(measurements.indices, id: \.self) { index in
+                            HStack {
+                                TextField("Label", text: $measurements[index].label)
+                                Divider()
+                                TextField("Value", text: $measurements[index].value)
+                                    .multilineTextAlignment(.trailing)
+                            }
                         }
-                    }
-                    Button("Add Measurement") {
-                        measurements.append(.init(label: "", value: ""))
+                        Button("Add Measurement") {
+                            measurements.append(.init(label: "", value: ""))
+                        }
                     }
                 }
                 
@@ -146,15 +141,15 @@ struct CaseUploadWizard: View {
         }
 
         Task {
+            let filteredMeasurements = measurements.filter { !$0.label.isEmpty || !$0.value.isEmpty }
             let input = DraftStudyInput(
                 title: caseTitle,
                 module: selectedModule,
-                urgency: urgency,
                 clinicalContext: clinicalContext,
                 patientAge: patientAge,
                 patientGender: patientGender,
                 preliminaryFindings: preliminaryFindings,
-                measurements: measurements.filter { !$0.label.isEmpty || !$0.value.isEmpty },
+                measurements: selectedModule == .cardiac ? filteredMeasurements : [],
                 attendingContact: attending.fullName ?? attending.email,
                 attendingId: attending.id
             )

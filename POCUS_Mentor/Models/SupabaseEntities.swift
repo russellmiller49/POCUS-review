@@ -110,6 +110,7 @@ struct Feedback: Identifiable, Codable, Hashable, Sendable {
     let reviewerId: UUID
     let rating: Int?
     let comments: String?
+    let mediaId: UUID?
     let createdAt: Date
 }
 

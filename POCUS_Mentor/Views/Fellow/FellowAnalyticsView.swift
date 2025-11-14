@@ -1,150 +1,123 @@
 import SwiftUI
 
 struct FellowAnalyticsView: View {
-    @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var viewModel: AppViewModel
+    
+    private var stats: AppViewModel.PortfolioStats { viewModel.portfolioStats }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                SectionHeader(title: "Learning Analytics", subtitle: "Track your competency growth and review efficiency over time.")
-                analyticsSummary
-                skillTrendSection
-                feedbackThemesSection
+                SectionHeader(
+                    title: "Learning Analytics",
+                    subtitle: "Live metrics from your Supabase studies."
+                )
+                summaryMetrics
+                examBreakdown
+                statusDistribution
             }
             .padding(24)
         }
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
     }
     
-    private var analyticsSummary: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Picker("Snapshot", selection: $appState.selectedAnalyticsSnapshot.animation(.easeInOut)) {
-                ForEach(SampleData.analyticsSnapshots, id: \.periodLabel) { snapshot in
-                    Text(snapshot.periodLabel).tag(snapshot)
-                }
-            }
-            .pickerStyle(.segmented)
-            
-            VStack(spacing: 16) {
-                MetricCard(
-                    title: "Cases",
-                    value: "\(appState.selectedAnalyticsSnapshot.totalCases)",
-                    trendDescription: "Reviewed this period",
-                    systemImage: "doc.plaintext",
-                    tint: .blue
-                )
-                MetricCard(
-                    title: "Acceptance Rate",
-                    value: String(format: "%.0f%%", appState.selectedAnalyticsSnapshot.acceptanceRate * 100),
-                    trendDescription: "Growth vs prior period",
-                    systemImage: "checkmark.seal.fill",
-                    tint: .teal
-                )
-                MetricCard(
-                    title: "Turnaround",
-                    value: String(format: "%.1fh", appState.selectedAnalyticsSnapshot.averageReviewTimeHours),
-                    trendDescription: "Average time to feedback",
-                    systemImage: "clock.badge.checkmark",
-                    tint: .purple
-                )
-            }
+    private var summaryMetrics: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+            MetricCard(
+                title: "Total Cases",
+                value: "\(stats.totalCases)",
+                trendDescription: "Across all statuses",
+                systemImage: "doc.text.image",
+                tint: .blue
+            )
+            MetricCard(
+                title: "Completed",
+                value: "\(stats.completed)",
+                trendDescription: "Approved or signed off",
+                systemImage: "checkmark.seal.fill",
+                tint: .green
+            )
+            MetricCard(
+                title: "Returned",
+                value: "\(stats.returned)",
+                trendDescription: stats.returned == 0 ? "Great job!" : "Needs revisions",
+                systemImage: "arrow.uturn.backward",
+                tint: .pink
+            )
+            MetricCard(
+                title: "Acceptance",
+                value: acceptanceRateText,
+                trendDescription: "Completed / Submitted",
+                systemImage: "chart.line.uptrend.xyaxis",
+                tint: .purple
+            )
         }
     }
     
-    private var skillTrendSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Skill Trajectory", subtitle: "Normalized growth in key competency domains (0 - 1 scale).")
-            ForEach(appState.selectedAnalyticsSnapshot.skillTrends) { trend in
-                SkillTrendCard(trend: trend)
-            }
-        }
-    }
-    
-    private var feedbackThemesSection: some View {
+    private var examBreakdown: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Top Feedback Themes", subtitle: "Focus your deliberate practice on these recurring topics.")
-            ForEach(appState.selectedAnalyticsSnapshot.topFeedbackThemes, id: \.self) { theme in
-                Label(theme, systemImage: "list.bullet.rectangle.portrait")
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(.systemBackground))
-                    )
-            }
-        }
-    }
-}
-
-private struct SkillTrendCard: View {
-    let trend: SkillTrend
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(trend.skillName)
-                .font(.headline)
-            TrendLine(values: trend.progressValues)
-                .frame(height: 100)
-            HStack {
-                ForEach(trend.progressValues.indices, id: \.self) { index in
-                    VStack {
-                        Text(String(format: "%.2f", trend.progressValues[index]))
-                            .font(.caption.monospacedDigit())
-                        Text("W\(index + 1)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+            SectionHeader(title: "Exam Mix", subtitle: "Where you're spending your time.")
+            if stats.examBreakdown.isEmpty {
+                EmptyPlaceholderView(
+                    title: "No cases yet",
+                    message: "Create a study to see distribution.",
+                    systemImage: "chart.bar"
+                )
+            } else {
+                ForEach(stats.examBreakdown) { stat in
+                    HStack {
+                        Text(stat.examType)
+                        Spacer()
+                        Text("\(stat.count)")
+                            .font(.headline)
                     }
-                    .frame(maxWidth: .infinity)
+                    Divider()
                 }
             }
         }
-        .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
-        )
+    }
+    
+    private var statusDistribution: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Status Distribution", subtitle: "Monitor drafts vs submitted cases.")
+            VStack(alignment: .leading, spacing: 8) {
+                StatusProgressRow(title: "Drafts", count: stats.drafts, total: stats.totalCases, tint: .gray)
+                StatusProgressRow(title: "Submitted", count: stats.submitted, total: stats.totalCases, tint: .blue)
+                StatusProgressRow(title: "Returned", count: stats.returned, total: stats.totalCases, tint: .pink)
+                StatusProgressRow(title: "Completed", count: stats.completed, total: stats.totalCases, tint: .green)
+            }
+        }
+    }
+    
+    private var acceptanceRateText: String {
+        let submitted = stats.submitted + stats.completed + stats.returned
+        guard submitted > 0 else { return "--" }
+        let rate = Double(stats.completed) / Double(submitted)
+        return String(format: "%.0f%%", rate * 100)
     }
 }
 
-private struct TrendLine: View {
-    let values: [Double]
+private struct StatusProgressRow: View {
+    let title: String
+    let count: Int
+    let total: Int
+    let tint: Color
     
     var body: some View {
-        GeometryReader { geometry in
-            let points = normalizedPoints(width: geometry.size.width, height: geometry.size.height)
-            Path { path in
-                guard let first = points.first else { return }
-                path.move(to: first)
-                points.dropFirst().forEach { path.addLine(to: $0) }
+        VStack(alignment: .leading) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text("\(count)")
+                    .font(.headline)
             }
-            .stroke(LinearGradient(colors: [.blue, .teal], startPoint: .leading, endPoint: .trailing), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-            
-            ForEach(points.indices, id: \.self) { index in
-                Circle()
-                    .fill(Color.blue.opacity(0.8))
-                    .frame(width: 8, height: 8)
-                    .position(points[index])
-            }
+            ProgressView(value: progress)
+                .tint(tint)
         }
     }
     
-    private func normalizedPoints(width: CGFloat, height: CGFloat) -> [CGPoint] {
-        guard let minValue = values.min(),
-              let maxValue = values.max(),
-              maxValue - minValue > 0 else {
-            return values.enumerated().map { index, value in
-                let x = CGFloat(index) / CGFloat(Swift.max(values.count - 1, 1)) * width
-                let y = height - CGFloat(value) * height
-                return CGPoint(x: x, y: y)
-            }
-        }
-        let xSpacing = width / CGFloat(Swift.max(values.count - 1, 1))
-        return values.enumerated().map { index, value in
-            let normalized = (value - minValue) / (maxValue - minValue)
-            let x = CGFloat(index) * xSpacing
-            let y = height - CGFloat(normalized) * height
-            return CGPoint(x: x, y: y)
-        }
+    private var progress: Double {
+        guard total > 0 else { return 0 }
+        return Double(count) / Double(total)
     }
 }

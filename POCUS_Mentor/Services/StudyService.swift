@@ -12,6 +12,7 @@ protocol StudyServicing: Sendable {
     func upsertSignoff(_ payload: UpsertSignoffRequest) async throws -> Signoff
     func fetchMedia(for studyId: UUID) async throws -> [Media]
     func fetchFeedback(for studyId: UUID) async throws -> [Feedback]
+    func fetchFeedback(for studyIds: [UUID]) async throws -> [Feedback]
     func fetchSignoff(for studyId: UUID) async throws -> Signoff?
     func fetchSignoffs(for studyIds: [UUID]) async throws -> [Signoff]
 }
@@ -69,6 +70,17 @@ struct SupabaseStudyService: StudyServicing {
             .from("feedback")
             .select()
             .eq("study_id", value: studyId)
+            .order("created_at", ascending: false)
+            .execute()
+        return response.value.map(\.model)
+    }
+
+    func fetchFeedback(for studyIds: [UUID]) async throws -> [Feedback] {
+        guard !studyIds.isEmpty else { return [] }
+        let response: PostgrestResponse<[FeedbackRow]> = try await client
+            .from("feedback")
+            .select()
+            .`in`("study_id", values: studyIds.map(\.uuidString))
             .order("created_at", ascending: false)
             .execute()
         return response.value.map(\.model)
@@ -259,19 +271,22 @@ struct NewFeedbackRequest: Encodable, Sendable {
     let reviewerId: UUID
     let rating: Int?
     let comments: String?
+    let mediaId: UUID?
 
     init(
         id: UUID = UUID(),
         studyId: UUID,
         reviewerId: UUID,
         rating: Int? = nil,
-        comments: String? = nil
+        comments: String? = nil,
+        mediaId: UUID? = nil
     ) {
         self.id = id
         self.studyId = studyId
         self.reviewerId = reviewerId
         self.rating = rating
         self.comments = comments
+        self.mediaId = mediaId
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -280,6 +295,7 @@ struct NewFeedbackRequest: Encodable, Sendable {
         case reviewerId = "reviewer_id"
         case rating
         case comments
+        case mediaId = "media_id"
     }
 }
 
@@ -377,6 +393,7 @@ private struct FeedbackRow: Decodable {
     let reviewer_id: UUID
     let rating: Int?
     let comments: String?
+    let media_id: UUID?
     let created_at: Date
 
     var model: Feedback {
@@ -386,6 +403,7 @@ private struct FeedbackRow: Decodable {
             reviewerId: reviewer_id,
             rating: rating,
             comments: comments,
+            mediaId: media_id,
             createdAt: created_at
         )
     }

@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct ResourcesLibraryView: View {
-    @EnvironmentObject private var appState: AppState
+    private let curatedResources = ResourceLink.curatedExamples
     
     var body: some View {
         List {
             Section("Curated Guides") {
-                ForEach(appState.resourceLinks) { resource in
+                ForEach(curatedResources) { resource in
                     ResourceLinkRow(resource: resource)
                 }
             }
@@ -26,6 +26,26 @@ struct ResourcesLibraryView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Resource Library")
     }
+}
+
+extension ResourceLink {
+    static let curatedExamples: [ResourceLink] = [
+        ResourceLink(
+            title: "ASE Echocardiography Guide",
+            description: "Acquisition standards and interpretation pearls.",
+            url: URL(string: "https://www.asecho.org")!
+        ),
+        ResourceLink(
+            title: "POCUS Teaching Checklist",
+            description: "Self-review checklist before submitting a case.",
+            url: URL(string: "https://example.com/pocus-checklist")!
+        ),
+        ResourceLink(
+            title: "Rapid Clip Optimization",
+            description: "Video walkthrough covering gain, depth, and sweep tips.",
+            url: URL(string: "https://example.com/clip-optimization")!
+        )
+    ]
 }
 
 private struct ResourceLinkRow: View {

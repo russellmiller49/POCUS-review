@@ -7,7 +7,6 @@ struct StudyDetailView: View {
 
     @State private var caseTitle: String
     @State private var module: UltrasoundModule?
-    @State private var urgency: CaseUrgency
     @State private var clinicalContext: String
     @State private var patientAge: Int
     @State private var patientGender: String
@@ -20,12 +19,18 @@ struct StudyDetailView: View {
 
     @AppStorage("pocus.deidentificationAcknowledged") private var deidentificationAcknowledged: Bool = false
 
+    private var isCardiacCase: Bool {
+        if let module {
+            return module == .cardiac
+        }
+        return detail.study.examType.caseInsensitiveCompare(UltrasoundModule.cardiac.rawValue) == .orderedSame
+    }
+
     init(detail: AppViewModel.StudyDetailState) {
         self.detail = detail
         let metadata = detail.metadata
         _caseTitle = State(initialValue: metadata.caseTitle ?? detail.study.examType)
         _module = State(initialValue: metadata.module ?? UltrasoundModule(rawValue: detail.study.examType))
-        _urgency = State(initialValue: metadata.urgency ?? .routine)
         _clinicalContext = State(initialValue: metadata.clinicalContext ?? "")
         _patientAge = State(initialValue: metadata.patientAge ?? 60)
         _patientGender = State(initialValue: metadata.patientGender ?? "")
@@ -39,10 +44,18 @@ struct StudyDetailView: View {
         _pendingMedia = State(initialValue: [])
     }
 
+    private var overallFeedback: [Feedback] {
+        detail.feedback.filter { $0.mediaId == nil }
+    }
+
+    private func feedback(for media: Media) -> [Feedback] {
+        detail.feedback.filter { $0.mediaId == media.id }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                StudySummarySection(detail: detail, caseTitle: caseTitle, urgency: urgency)
+                StudySummarySection(detail: detail, caseTitle: caseTitle)
                 caseOverviewSection
                 patientSection
                 clinicalContextSection
@@ -82,7 +95,7 @@ struct StudyDetailView: View {
                 viewModel.presentBanner("Import failed: \(error.localizedDescription)")
             }
         }
-        .onChange(of: pendingMedia.count) { _ in
+        .onChange(of: pendingMedia.count) { _, _ in
             processPendingMedia()
         }
     }
@@ -99,11 +112,6 @@ struct StudyDetailView: View {
                     Text(module.rawValue)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                }
-            }
-            Picker("Urgency", selection: $urgency) {
-                ForEach(CaseUrgency.allCases) { option in
-                    Text(option.displayName).tag(option)
                 }
             }
             saveButton(title: "Update Overview")
@@ -137,19 +145,23 @@ struct StudyDetailView: View {
     }
 
     private var measurementsSection: some View {
-        Section("Measurements") {
-            ForEach(measurements.indices, id: \.self) { index in
-                HStack {
-                    TextField("Label", text: $measurements[index].label)
-                    Divider()
-                    TextField("Value", text: $measurements[index].value)
-                        .multilineTextAlignment(.trailing)
+        Group {
+            if isCardiacCase {
+                Section("Measurements") {
+                    ForEach(measurements.indices, id: \.self) { index in
+                        HStack {
+                            TextField("Label", text: $measurements[index].label)
+                            Divider()
+                            TextField("Value", text: $measurements[index].value)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    Button("Add Measurement") {
+                        measurements.append(ClinicalDetail(label: "", value: ""))
+                    }
+                    saveButton(title: "Save Measurements")
                 }
             }
-            Button("Add Measurement") {
-                measurements.append(ClinicalDetail(label: "", value: ""))
-            }
-            saveButton(title: "Save Measurements")
         }
     }
 
@@ -167,7 +179,13 @@ struct StudyDetailView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(detail.media, id: \.id) { media in
-                    MediaRowView(media: media)
+                    VStack(alignment: .leading, spacing: 8) {
+                        MediaRowView(media: media)
+                        let comments = detail.feedback.filter { $0.mediaId == media.id }
+                        if !comments.isEmpty {
+                            MediaFeedbackList(feedback: comments)
+                        }
+                    }
                 }
             }
 
@@ -217,9 +235,10 @@ struct StudyDetailView: View {
 
     private var feedbackSection: some View {
         Group {
-            if !detail.feedback.isEmpty {
-                Section("Feedback") {
-                    ForEach(detail.feedback, id: \.id) { feedback in
+            let overall = detail.feedback.filter { $0.mediaId == nil }
+            if !overall.isEmpty {
+                Section("Overall Feedback") {
+                    ForEach(overall, id: \.id) { feedback in
                         FeedbackRowView(feedback: feedback)
                     }
                 }
@@ -240,12 +259,11 @@ struct StudyDetailView: View {
         var metadata = detail.metadata
         metadata.caseTitle = caseTitle
         metadata.module = module
-        metadata.urgency = urgency
         metadata.clinicalContext = clinicalContext
         metadata.patientAge = patientAge
         metadata.patientGender = patientGender
         metadata.preliminaryFindings = preliminaryFindings
-        metadata.measurements = measurements
+        metadata.measurements = isCardiacCase ? measurements : nil
         metadata.attendingContact = attendingContact
         return metadata
     }
@@ -331,20 +349,26 @@ struct StudyDetailView: View {
 private struct StudySummarySection: View {
     let detail: AppViewModel.StudyDetailState
     let caseTitle: String
-    let urgency: CaseUrgency
 
     var body: some View {
         Section("Overview") {
             Text(caseTitle)
                 .font(.headline)
-            Label(urgency.displayName, systemImage: "bolt.heart")
-                .font(.caption)
-                .padding(6)
-                .background(urgency.color.opacity(0.15))
-                .clipShape(Capsule())
             Text("Created \(detail.study.createdAt.formatted(date: .abbreviated, time: .shortened))")
             if let submitted = detail.study.submittedAt {
                 Text("Submitted \(submitted.formatted(date: .abbreviated, time: .shortened))")
+                    .foregroundStyle(.secondary)
+            }
+            if let signoff = detail.signoff {
+                Divider()
+                Text("Sign-off")
+                    .font(.headline)
+                Text(signoff.status.rawValue.capitalized)
+                if let signedAt = signoff.signedAt {
+                    Text("Updated \(signedAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -404,6 +428,22 @@ private struct MediaRowView: View {
             Text(media.contentType)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct MediaFeedbackList: View {
+    let feedback: [Feedback]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Comments")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ForEach(feedback, id: \.id) { item in
+                FeedbackRowView(feedback: item)
+            }
         }
         .padding(.vertical, 4)
     }

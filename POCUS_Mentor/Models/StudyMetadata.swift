@@ -4,7 +4,6 @@ struct StudyMetadata: Codable {
     var caseTitle: String?
     var module: UltrasoundModule?
     var clinicalContext: String?
-    var urgency: CaseUrgency?
     var patientAge: Int?
     var patientGender: String?
     var preliminaryFindings: String?
@@ -29,7 +28,6 @@ struct StudyMetadata: Codable {
 struct DraftStudyInput {
     var title: String
     var module: UltrasoundModule
-    var urgency: CaseUrgency
     var clinicalContext: String
     var patientAge: Int?
     var patientGender: String
