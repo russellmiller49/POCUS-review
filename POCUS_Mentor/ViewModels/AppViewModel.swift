@@ -17,7 +17,7 @@ final class AppViewModel: ObservableObject {
 
     enum StudyFilter: Hashable, CaseIterable {
         case drafts        // Fellow-owned drafts
-        case submitted     // Waiting for attending review
+        case queue         // Waiting for attending review
         case returned      // Needs revision / not accepted
         case completed     // Approved or signed off
         case all
@@ -25,7 +25,7 @@ final class AppViewModel: ObservableObject {
         var title: String {
             switch self {
             case .drafts: return "Drafts"
-            case .submitted: return "Submitted"
+            case .queue: return "Submitted"
             case .returned: return "Returned"
             case .completed: return "Completed"
             case .all: return "All"
@@ -92,6 +92,17 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         let examBreakdown: [ExamStat]
     }
 
+    struct PortfolioSummary {
+        let totalAccepted: Int
+        let totalRequired: Int
+        let perModule: [PortfolioProgress]
+
+        var overallProgress: Double {
+            guard totalRequired > 0 else { return 0 }
+            return min(Double(totalAccepted) / Double(totalRequired), 1.0)
+        }
+    }
+
     struct ProgramAnalytics {
         struct ExamStat: Identifiable {
             let examType: String
@@ -130,7 +141,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     @Published private(set) var studies: [Study] = []
     @Published private(set) var studyDetail: StudyDetailState?
     @Published private(set) var feedbackByStudy: [UUID: [Feedback]] = [:]
-    @Published var filter: StudyFilter = .submitted
+    @Published var filter: StudyFilter = .queue
     @Published private(set) var banner: BannerMessage?
     @Published private(set) var uploadStatuses: [UUID: TUSUploadService.UploadStatus] = [:]
     @Published private(set) var isBusy: Bool = false
@@ -200,19 +211,32 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     var filteredStudies: [Study] {
         guard let session = activeSession else { return studies }
         let base = studies.sorted(by: { $0.createdAt > $1.createdAt })
+        let myUserId = session.profile.id
+        let isFellow = session.role.normalized == .fellow
 
         return base.filter { study in
             switch filter {
             case .drafts:
-                return study.status == .draft && study.createdBy == session.profile.id
-            case .submitted:
-                return study.status == .submitted || study.status == .reviewable
+                return study.status == .draft && study.createdBy == myUserId
+            case .queue:
+                let reviewStatuses: [StudyStatus] = [.submitted, .reviewable]
+                if isFellow {
+                    return study.createdBy == myUserId && reviewStatuses.contains(study.status)
+                }
+                return reviewStatuses.contains(study.status)
             case .returned:
+                if isFellow {
+                    return study.createdBy == myUserId && study.status == .needsRevision
+                }
                 return study.status == .needsRevision
             case .completed:
-                return study.status == .approved || study.status == .signedOff
+                let matchesStatus = study.status == .approved || study.status == .signedOff
+                if isFellow {
+                    return study.createdBy == myUserId && matchesStatus
+                }
+                return matchesStatus
             case .all:
-                return true
+                return isFellow ? (study.createdBy == myUserId) : true
             }
         }
     }
@@ -224,6 +248,35 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
 
     var portfolioStats: PortfolioStats {
         makePortfolioStats(for: myStudies)
+    }
+
+    var fellowPortfolio: PortfolioSummary? {
+        guard let session = activeSession else { return nil }
+        let accepted = studies.filter {
+            $0.createdBy == session.profile.id && ($0.status == .approved || $0.status == .signedOff)
+        }
+
+        let grouped = Dictionary(grouping: accepted) { study -> UltrasoundModule in
+            module(forExamType: study.examType)
+        }
+
+        let perModule = UltrasoundModule.allCases.map { module -> PortfolioProgress in
+            let count = grouped[module]?.count ?? 0
+            return PortfolioProgress(
+                module: module,
+                acceptedCount: count,
+                requiredCount: module.requiredImages
+            )
+        }
+
+        let totalAccepted = perModule.reduce(0) { $0 + $1.acceptedCount }
+        let totalRequired = perModule.reduce(0) { $0 + $1.requiredCount }
+
+        return PortfolioSummary(
+            totalAccepted: totalAccepted,
+            totalRequired: totalRequired,
+            perModule: perModule
+        )
     }
 
     var programAnalytics: ProgramAnalytics {
@@ -241,8 +294,24 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         guard activeSession != nil else { return [] }
         return studies
             .filter { study in
-                let statuses: [StudyStatus] = [.submitted, .reviewable, .needsRevision]
+                let statuses: [StudyStatus] = [.submitted, .reviewable]
                 return statuses.contains(study.status)
+            }
+            .sorted(by: { $0.submittedAt ?? $0.createdAt > $1.submittedAt ?? $1.createdAt })
+    }
+
+    var returnedReviews: [Study] {
+        guard activeSession != nil else { return [] }
+        return studies
+            .filter { $0.status == .needsRevision }
+            .sorted(by: { $0.submittedAt ?? $0.createdAt > $1.submittedAt ?? $1.createdAt })
+    }
+
+    var acceptedReviews: [Study] {
+        guard activeSession != nil else { return [] }
+        return studies
+            .filter { study in
+                study.status == .approved || study.status == .signedOff
             }
             .sorted(by: { $0.submittedAt ?? $0.createdAt > $1.submittedAt ?? $1.createdAt })
     }
@@ -445,10 +514,6 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
 
     func loadFellowDirectoryIfNeeded() async {
         guard let session = activeSession else { return }
-        guard session.role.normalized == .administrator else {
-            fellowDirectory = []
-            return
-        }
         do {
             fellowDirectory = try await institutionService.fetchMembers(
                 institutionId: session.membership.membership.institutionId,
@@ -514,13 +579,6 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         do {
             let study = try await studyService.createStudy(payload)
             studies.append(study)
-            studyDetail = StudyDetailState(
-                study: study,
-                metadata: metadata,
-                media: [],
-                feedback: [],
-                signoff: nil
-            )
             return study
         } catch {
             banner = BannerMessage(text: "Unable to create study: \(error.localizedDescription)")
@@ -528,20 +586,29 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         }
     }
 
-    func submitStudy() async {
-        guard let detail = studyDetail else { return }
+    func submitStudy(study targetStudy: Study? = nil) async {
+        let targetId: UUID
+        if let study = targetStudy {
+            targetId = study.id
+        } else if let detail = studyDetail {
+            targetId = detail.study.id
+        } else {
+            return
+        }
         isBusy = true
         defer { isBusy = false }
 
         do {
             let updated = try await studyService.updateStudyStatus(
-                studyId: detail.study.id,
+                studyId: targetId,
                 status: .submitted,
                 submittedAt: Date()
             )
             studies = studies.map { $0.id == updated.id ? updated : $0 }
             banner = BannerMessage(text: "Case submitted for review.")
-            studyDetail = nil
+            if let detail = studyDetail, detail.study.id == updated.id {
+                studyDetail = nil
+            }
         } catch {
             banner = BannerMessage(text: "Failed to submit study: \(error.localizedDescription)")
         }
@@ -635,19 +702,9 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         }
     }
 
-    func updateMetadata(_ metadata: StudyMetadata) async {
+    func updateMetadata(_ metadata: StudyMetadata, successMessage: String = "Details saved.") async {
         guard let detail = studyDetail else { return }
-        do {
-            let updated = try await studyService.updateStudyNotes(
-                studyId: detail.study.id,
-                notes: metadata.encode()
-            )
-            await loadStudyDetail(for: updated)
-            studies = studies.map { $0.id == updated.id ? updated : $0 }
-            banner = BannerMessage(text: "Details saved.")
-        } catch {
-            banner = BannerMessage(text: "Unable to save details: \(error.localizedDescription)")
-        }
+        await persistMetadata(metadata, for: detail.study.id, successMessage: successMessage)
     }
 
     func loadStudyDetail(for study: Study) async {
@@ -655,18 +712,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         defer { isBusy = false }
 
         do {
-            let metadata = StudyMetadata.decode(from: study.notes)
-            async let media = studyService.fetchMedia(for: study.id)
-            async let feedback = studyService.fetchFeedback(for: study.id)
-            async let signoff = studyService.fetchSignoff(for: study.id)
-
-            let detail = StudyDetailState(
-                study: study,
-                metadata: metadata,
-                media: try await media,
-                feedback: try await feedback,
-                signoff: try await signoff
-            )
+            let detail = try await makeStudyDetail(for: study)
             feedbackByStudy[study.id] = detail.feedback
             studyDetail = detail
         } catch {
@@ -674,8 +720,68 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         }
     }
 
+    func fetchStudyDetail(for study: Study) async -> StudyDetailState? {
+        do {
+            return try await makeStudyDetail(for: study)
+        } catch {
+            banner = BannerMessage(text: "Unable to load study detail: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private func makeStudyDetail(for study: Study) async throws -> StudyDetailState {
+        let metadata = StudyMetadata.decode(from: study.notes)
+        async let media = studyService.fetchMedia(for: study.id)
+        async let feedback = studyService.fetchFeedback(for: study.id)
+        async let signoff = studyService.fetchSignoff(for: study.id)
+
+        return StudyDetailState(
+            study: study,
+            metadata: metadata,
+            media: try await media,
+            feedback: try await feedback,
+            signoff: try await signoff
+        )
+    }
+
+    private func updateMetadata(
+        for studyId: UUID,
+        showBanner: Bool = false,
+        mutate: (inout StudyMetadata) -> Void
+    ) async {
+        guard let study = studies.first(where: { $0.id == studyId }) else { return }
+        var metadata = StudyMetadata.decode(from: study.notes)
+        mutate(&metadata)
+        await persistMetadata(metadata, for: studyId, successMessage: showBanner ? "Details saved." : nil)
+    }
+
+    private func persistMetadata(_ metadata: StudyMetadata, for studyId: UUID, successMessage: String?) async {
+        do {
+            let updated = try await studyService.updateStudyNotes(
+                studyId: studyId,
+                notes: metadata.encode()
+            )
+            if var detail = studyDetail, detail.study.id == studyId {
+                detail.metadata = metadata
+                studyDetail = detail
+            }
+            studies = studies.map { $0.id == updated.id ? updated : $0 }
+            if let message = successMessage {
+                banner = BannerMessage(text: message)
+            }
+        } catch {
+            banner = BannerMessage(text: "Unable to save details: \(error.localizedDescription)")
+        }
+    }
+
+    private func assignMediaLabel(_ label: String, to media: Media) async {
+        await updateMetadata(for: media.studyId, showBanner: false) { metadata in
+            metadata.setMediaLabel(label, for: media.id)
+        }
+    }
+
     @discardableResult
-    func enqueueUpload(fileURL: URL, contentType: String, study: Study) -> UUID? {
+    func enqueueUpload(fileURL: URL, contentType: String, study: Study, label: String? = nil) -> UUID? {
         guard let session = activeSession else { return nil }
         do {
             let handle = try uploadService.enqueueUpload(
@@ -683,7 +789,8 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
                 studyId: study.id,
                 institutionId: session.membership.membership.institutionId,
                 contentType: contentType,
-                accessToken: session.session.accessToken
+                accessToken: session.session.accessToken,
+                label: label
             )
             uploadStatuses[handle.id] = .queued
             return handle.id
@@ -720,6 +827,18 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             presentBanner("Unable to load media: \(error.localizedDescription)")
             return nil
         }
+    }
+
+    private func module(forExamType examType: String) -> UltrasoundModule {
+        if let exact = UltrasoundModule(rawValue: examType) {
+            return exact
+        }
+        if let match = UltrasoundModule.allCases.first(where: {
+            $0.rawValue.caseInsensitiveCompare(examType) == .orderedSame
+        }) {
+            return match
+        }
+        return .cardiac
     }
 
     private func makePortfolioStats(for studies: [Study]) -> PortfolioStats {
@@ -765,7 +884,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             let submitted = cases.filter { [.submitted, .reviewable].contains($0.status) }.count
             let returned = cases.filter { $0.status == .needsRevision }.count
             let completed = cases.filter { [.approved, .signedOff].contains($0.status) }.count
-            let label = fellowLabel(for: userId)
+            let label = fellowInfo(for: userId)
             return ProgramAnalytics.FellowSummary(
                 id: userId,
                 name: label.name,
@@ -795,7 +914,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
         )
     }
 
-    private func fellowLabel(for userId: UUID) -> (name: String, email: String) {
+    func fellowInfo(for userId: UUID) -> (name: String, email: String) {
         if let match = fellowDirectory.first(where: { $0.id == userId }) {
             let preferredName = match.fullName?.isEmpty == false ? match.fullName! : match.email
             return (preferredName, match.email)
@@ -921,6 +1040,9 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
             if var detail = studyDetail, detail.study.id == context.studyId {
                 detail.media.insert(media, at: 0)
                 studyDetail = detail
+            }
+            if let label = context.label?.trimmingCharacters(in: .whitespacesAndNewlines), !label.isEmpty {
+                await assignMediaLabel(label, to: media)
             }
             await refreshStudies()
         } catch {

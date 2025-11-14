@@ -9,7 +9,7 @@ struct FellowCasesView: View {
             switch filter {
             case .drafts:
                 return study.status == .draft
-            case .submitted:
+            case .queue:
                 return [.submitted, .reviewable].contains(study.status)
             case .returned:
                 return study.status == .needsRevision
@@ -25,12 +25,23 @@ struct FellowCasesView: View {
     var body: some View {
         List {
             Section {
-                Picker("Filter", selection: $filter) {
-                    ForEach(AppViewModel.StudyFilter.allCases, id: \.self) { filter in
-                        Text(filter.title).tag(filter)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Filter")
+                            .font(.subheadline.bold())
+                        Spacer()
+                        RefreshButton(isBusy: viewModel.isBusy) {
+                            Task { await viewModel.refreshStudies() }
+                        }
                     }
+                    Picker("Filter", selection: $filter) {
+                        ForEach(AppViewModel.StudyFilter.allCases, id: \.self) { filter in
+                            Text(filter.title).tag(filter)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
+                .listRowBackground(Color.clear)
             }
             
             Section("My Cases") {
@@ -54,6 +65,14 @@ struct FellowCasesView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .refreshable {
+            await viewModel.refreshStudies()
+        }
+        .task {
+            if viewModel.studies.isEmpty {
+                await viewModel.refreshStudies()
+            }
+        }
     }
 }
 

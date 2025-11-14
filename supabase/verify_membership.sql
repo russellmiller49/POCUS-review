@@ -26,3 +26,16 @@ WHERE m.user_id = 'db9d49e5-10bb-49d1-ae0d-63893b84e308'::uuid;
 -- - role_approved: true
 -- - status: '✅ APPROVED - Should be able to create studies'
 
+
+
+
+
+
+
+
+
+
+
+
+
+

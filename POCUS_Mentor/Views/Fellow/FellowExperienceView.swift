@@ -35,25 +35,10 @@ struct FellowExperienceView: View {
                 .padding(.vertical, 24)
                 .padding(.horizontal)
             }
+            .refreshable {
+                await viewModel.refreshStudies()
+            }
             .navigationTitle("Fellow Dashboard")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await viewModel.refreshStudies() }
-                    } label: {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                    .disabled(viewModel.isBusy)
-                }
-            }
-        }
-        .sheet(item: Binding(
-            get: { viewModel.studyDetail },
-            set: { newValue in
-                if newValue == nil { viewModel.dismissStudyDetail() }
-            }
-        )) { detail in
-            StudyDetailView(detail: detail)
         }
         .task {
             if viewModel.studies.isEmpty {
@@ -87,8 +72,14 @@ struct FellowExperienceView: View {
 
     private var filterControl: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("My Cases")
-                .font(.title3.bold())
+            HStack {
+                Text("My Cases")
+                    .font(.title3.bold())
+                Spacer()
+                RefreshButton(isBusy: viewModel.isBusy) {
+                    Task { await viewModel.refreshStudies() }
+                }
+            }
             Picker("Filter", selection: $viewModel.filter) {
                 ForEach(AppViewModel.StudyFilter.allCases, id: \.self) { filter in
                     Text(filter.title).tag(filter)

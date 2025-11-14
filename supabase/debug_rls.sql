@@ -39,3 +39,16 @@ SELECT id, slug, name FROM public.institutions;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+

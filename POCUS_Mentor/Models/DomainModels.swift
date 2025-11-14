@@ -326,6 +326,24 @@ struct CaseMedia: Identifiable, Hashable {
     var isAdditional: Bool = false  // Additional/submodule view
 }
 
+struct ExistingCaseMedia: Identifiable, Hashable {
+    let media: Media
+    let viewName: String
+    let isRequired: Bool
+    let label: String
+
+    var id: UUID { media.id }
+
+    var type: CaseMedia.MediaType {
+        switch media.kind {
+        case .video, .clip:
+            return .video
+        default:
+            return .image
+        }
+    }
+}
+
 struct ClinicalDetail: Identifiable, Hashable, Codable {
     let id: UUID
     var label: String

@@ -64,3 +64,16 @@ GRANT EXECUTE ON FUNCTION public.assign_default_role() TO service_role;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+

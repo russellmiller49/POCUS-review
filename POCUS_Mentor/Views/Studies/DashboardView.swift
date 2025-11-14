@@ -2,74 +2,54 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var viewModel: AppViewModel
-    @State private var tabSelection: Tab = .experience
-    @State private var hasPresentedExperience = false
+    @State private var activeSheet: ActiveSheet?
 
-    enum Tab: Hashable {
-        case experience
-        case studies
-        case review
-        case settings
+    private enum ActiveSheet: Identifiable {
+        case studyDetail(AppViewModel.StudyDetailState)
+
+        var id: UUID {
+            switch self {
+            case .studyDetail(let detail):
+                return detail.id
+            }
+        }
     }
 
     var body: some View {
-        TabView(selection: $tabSelection) {
-            if let role = userRole {
-                RoleExperienceContainer(role: role)
-                    .tabItem {
-                        Label(experienceTitle, systemImage: experienceIcon)
-                    }
-                    .tag(Tab.experience)
-            } else {
+        Group {
+            switch viewModel.currentSession?.role.userRole {
+            case .some(.fellow):
+                FellowDashboardTabView()
+            case .some(.attending):
+                AttendingExperienceView()
+            case .some(.administrator):
+                AdministratorExperienceView()
+            case .none:
                 ProgressView("Loading role…")
-                    .tabItem { Label(experienceTitle, systemImage: experienceIcon) }
-                    .tag(Tab.experience)
             }
-
-            StudyHomeView()
-                .tabItem { Label("Studies", systemImage: "doc.on.doc") }
-                .tag(Tab.studies)
-
-            AttendingReviewView()
-                .tabItem { Label("Review", systemImage: "checkmark.circle") }
-                .tag(Tab.review)
-
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(Tab.settings)
         }
-        .task {
-            autoSelectExperienceIfNeeded()
+        .onAppear {
+            updateActiveSheet(with: viewModel.studyDetail)
         }
-        .onChange(of: userRole) { _, _ in
-            autoSelectExperienceIfNeeded()
+        .onChange(of: viewModel.studyDetail?.id) { _ in
+            updateActiveSheet(with: viewModel.studyDetail)
         }
-        .sheet(item: Binding(
-            get: { viewModel.studyDetail },
-            set: { newValue in
-                if newValue == nil { viewModel.dismissStudyDetail() }
-            })
-        ) { detail in
-            StudyDetailView(detail: detail)
+        .sheet(item: $activeSheet, onDismiss: {
+            viewModel.dismissStudyDetail()
+        }) { sheet in
+            switch sheet {
+            case .studyDetail(let detail):
+                StudyDetailView(detail: detail)
+            }
         }
     }
 
-    private var userRole: UserRole? {
-        viewModel.currentSession?.role.userRole
-    }
-
-    private var experienceTitle: String {
-        userRole?.displayName ?? "Experience"
-    }
-
-    private var experienceIcon: String {
-        userRole?.systemImage ?? "person.circle"
-    }
-
-    private func autoSelectExperienceIfNeeded() {
-        guard userRole != nil, hasPresentedExperience == false else { return }
-        tabSelection = .experience
-        hasPresentedExperience = true
+    private func updateActiveSheet(with detail: AppViewModel.StudyDetailState?) {
+        if let detail {
+            activeSheet = .studyDetail(detail)
+        } else {
+            activeSheet = nil
+        }
     }
 }
 

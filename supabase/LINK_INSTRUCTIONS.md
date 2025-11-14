@@ -83,3 +83,16 @@ If you see authentication errors:
 3. Try linking from a different network (in case of firewall issues)
 4. Use the Supabase Dashboard SQL Editor as an alternative for running SQL
 
+
+
+
+
+
+
+
+
+
+
+
+
+

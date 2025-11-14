@@ -6,10 +6,13 @@ struct StudyHomeView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
+            HStack(spacing: 12) {
                 Text("Studies")
                     .font(.largeTitle.bold())
                 Spacer()
+                RefreshButton(isBusy: viewModel.isBusy) {
+                    Task { await viewModel.refreshStudies() }
+                }
                 Button(action: { showNewStudySheet = true }) {
                     Label("New Study", systemImage: "plus.circle.fill")
                 }
@@ -43,17 +46,12 @@ struct StudyHomeView: View {
                     }
                 }
                 .listStyle(.plain)
+                .refreshable {
+                    await viewModel.refreshStudies()
+                }
             }
         }
         .padding(.vertical)
-        .sheet(item: Binding(
-            get: { viewModel.studyDetail },
-            set: { newValue in
-                if newValue == nil { viewModel.dismissStudyDetail() }
-            })
-        ) { detail in
-            StudyDetailView(detail: detail)
-        }
         .sheet(isPresented: $showNewStudySheet) {
             CaseUploadWizard()
                 .environmentObject(viewModel)

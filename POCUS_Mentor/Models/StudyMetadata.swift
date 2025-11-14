@@ -9,6 +9,7 @@ struct StudyMetadata: Codable {
     var preliminaryFindings: String?
     var measurements: [ClinicalDetail]?
     var attendingContact: String?
+    var mediaLabels: [UUID: String]?
 
     static func decode(from notes: String?) -> StudyMetadata {
         guard let notes,
@@ -22,6 +23,16 @@ struct StudyMetadata: Codable {
     func encode() -> String? {
         guard let data = try? JSONEncoder().encode(self) else { return nil }
         return String(data: data, encoding: .utf8)
+    }
+
+    func mediaLabel(for mediaId: UUID) -> String? {
+        mediaLabels?[mediaId]
+    }
+
+    mutating func setMediaLabel(_ label: String?, for mediaId: UUID) {
+        var labels = mediaLabels ?? [:]
+        labels[mediaId] = label
+        mediaLabels = labels
     }
 }
 

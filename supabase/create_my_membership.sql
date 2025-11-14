@@ -42,3 +42,16 @@ FROM public.memberships m
 JOIN public.institutions i ON i.id = m.institution_id
 WHERE m.user_id = auth.uid();
 
+
+
+
+
+
+
+
+
+
+
+
+
+

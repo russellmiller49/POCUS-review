@@ -4,8 +4,19 @@ import UniformTypeIdentifiers
 
 struct ModuleMediaUploadView: View {
     let module: UltrasoundModule
-    @Binding var media: [CaseMedia]
+    @Binding private var media: [CaseMedia]
+    @Binding private var existingMedia: [ExistingCaseMedia]
     @State private var showAdditionalViews = false
+
+    init(
+        module: UltrasoundModule,
+        media: Binding<[CaseMedia]>,
+        existingMedia: Binding<[ExistingCaseMedia]> = .constant([])
+    ) {
+        self.module = module
+        _media = media
+        _existingMedia = existingMedia
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -37,6 +48,7 @@ struct ModuleMediaUploadView: View {
                         viewName: viewName,
                         module: module,
                         media: $media,
+                        existingMedia: $existingMedia,
                         isRequired: true
                     )
                 }
@@ -92,7 +104,9 @@ struct ModuleMediaUploadView: View {
     }
 
     private var requiredMediaCount: Int {
-        media.filter { $0.isRequired && !$0.title.isEmpty }.count
+        let pending = media.filter { $0.isRequired && !$0.title.isEmpty }.count
+        let existing = existingMedia.filter { $0.isRequired }.count
+        return pending + existing
     }
 
     private var progressColor: Color {
@@ -126,15 +140,24 @@ struct ModuleViewDropZone: View {
     let viewName: String
     let module: UltrasoundModule
     @Binding var media: [CaseMedia]
+    @Binding var existingMedia: [ExistingCaseMedia]
     let isRequired: Bool
 
     @State private var isTargeted = false
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
     @State private var showDocumentPicker = false
+    @State private var replacementTarget: ExistingCaseMedia?
+    @State private var showReplaceOptions = false
 
     private var viewMedia: [CaseMedia] {
         media.filter { $0.title == viewName && $0.isRequired == isRequired }
+    }
+
+    private var existingForView: [ExistingCaseMedia] {
+        existingMedia.filter {
+            $0.isRequired == isRequired && $0.viewName.caseInsensitiveCompare(viewName) == .orderedSame
+        }
     }
 
     var body: some View {
@@ -144,7 +167,7 @@ struct ModuleViewDropZone: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                 Spacer()
-                if !viewMedia.isEmpty {
+                if !viewMedia.isEmpty || !existingForView.isEmpty {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                 }
@@ -161,7 +184,7 @@ struct ModuleViewDropZone: View {
                             .fill(isTargeted ? module.color.opacity(0.1) : Color.clear)
                     )
 
-                if viewMedia.isEmpty {
+                if viewMedia.isEmpty && existingForView.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "photo.badge.plus")
                             .font(.title2)
@@ -174,6 +197,12 @@ struct ModuleViewDropZone: View {
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
+                            ForEach(existingForView) { item in
+                                ExistingMediaThumbnail(
+                                    media: item,
+                                    onReplace: { beginReplacement(for: item) }
+                                )
+                            }
                             ForEach(viewMedia) { item in
                                 MediaThumbnail(media: item, onRemove: {
                                     media.removeAll { $0.id == item.id }
@@ -218,6 +247,23 @@ struct ModuleViewDropZone: View {
                     await loadPhotos(from: newItems)
                     selectedPhotos = []
                 }
+            }
+            .confirmationDialog(
+                "Replace \(replacementTarget?.label ?? viewName)",
+                isPresented: $showReplaceOptions,
+                presenting: replacementTarget
+            ) { _ in
+                Button("Choose from Photos") {
+                    showPhotoPicker = true
+                }
+                Button("Choose from Files") {
+                    showDocumentPicker = true
+                }
+                Button("Cancel", role: .cancel) {
+                    replacementTarget = nil
+                }
+            } message: { target in
+                Text("Select new media to replace \(target.label).")
             }
 
             actionButtons
@@ -287,6 +333,10 @@ struct ModuleViewDropZone: View {
             isRequired: isRequired,
             isAdditional: !isRequired
         )
+        if let replacement = replacementTarget {
+            removeExisting(replacement)
+            replacementTarget = nil
+        }
         media.append(newMedia)
     }
 
@@ -307,6 +357,15 @@ struct ModuleViewDropZone: View {
             }
             .buttonStyle(.bordered)
         }
+    }
+
+    private func beginReplacement(for item: ExistingCaseMedia) {
+        replacementTarget = item
+        showReplaceOptions = true
+    }
+
+    private func removeExisting(_ item: ExistingCaseMedia) {
+        existingMedia.removeAll { $0.id == item.id }
     }
 
     private func persistImportedFile(_ url: URL) -> URL? {
@@ -363,5 +422,32 @@ struct MediaThumbnail: View {
             }
             .offset(x: 5, y: -5)
         }
+    }
+}
+
+struct ExistingMediaThumbnail: View {
+    let media: ExistingCaseMedia
+    let onReplace: () -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.blue.opacity(0.15))
+                .frame(width: 70, height: 70)
+                .overlay(
+                    Image(systemName: media.type == .image ? "photo" : "video.fill")
+                        .foregroundStyle(.blue)
+                )
+            Text(media.label)
+                .font(.caption2)
+                .lineLimit(1)
+            Button("Replace") {
+                onReplace()
+            }
+            .font(.caption2)
+            .buttonStyle(.bordered)
+            .controlSize(.mini)
+        }
+        .frame(width: 80)
     }
 }

@@ -14,6 +14,7 @@ struct StudyDetailView: View {
     @State private var attendingContact: String
     @State private var measurements: [ClinicalDetail]
     @State private var pendingMedia: [CaseMedia]
+    @State private var existingCapturedMedia: [ExistingCaseMedia]
     @State private var processedMediaIDs: Set<UUID> = []
     @State private var showImporter = false
 
@@ -29,8 +30,9 @@ struct StudyDetailView: View {
     init(detail: AppViewModel.StudyDetailState) {
         self.detail = detail
         let metadata = detail.metadata
+        let resolvedModule = metadata.module ?? UltrasoundModule(rawValue: detail.study.examType)
         _caseTitle = State(initialValue: metadata.caseTitle ?? detail.study.examType)
-        _module = State(initialValue: metadata.module ?? UltrasoundModule(rawValue: detail.study.examType))
+        _module = State(initialValue: resolvedModule)
         _clinicalContext = State(initialValue: metadata.clinicalContext ?? "")
         _patientAge = State(initialValue: metadata.patientAge ?? 60)
         _patientGender = State(initialValue: metadata.patientGender ?? "")
@@ -42,6 +44,7 @@ struct StudyDetailView: View {
             ClinicalDetail(label: "TR Vmax", value: "")
         ])
         _pendingMedia = State(initialValue: [])
+        _existingCapturedMedia = State(initialValue: StudyDetailView.initialExistingMedia(detail: detail, module: resolvedModule))
     }
 
     private var overallFeedback: [Feedback] {
@@ -56,6 +59,7 @@ struct StudyDetailView: View {
         NavigationStack {
             Form {
                 StudySummarySection(detail: detail, caseTitle: caseTitle)
+                actionsSection
                 caseOverviewSection
                 patientSection
                 clinicalContextSection
@@ -64,7 +68,11 @@ struct StudyDetailView: View {
                 attendingSection
                 if let module {
                     Section("Media Capture") {
-                        ModuleMediaUploadView(module: module, media: $pendingMedia)
+                        ModuleMediaUploadView(
+                            module: module,
+                            media: $pendingMedia,
+                            existingMedia: $existingCapturedMedia
+                        )
                     }
                 }
                 mediaSection
@@ -73,16 +81,6 @@ struct StudyDetailView: View {
                 feedbackSection
             }
             .navigationTitle(module?.rawValue ?? detail.study.examType)
-            .toolbar {
-                if viewModel.canSubmitStudy {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Submit") {
-                            Task { await viewModel.submitStudy() }
-                        }
-                        .disabled(viewModel.isBusy)
-                    }
-                }
-            }
         }
         .fileImporter(
             isPresented: $showImporter,
@@ -98,9 +96,43 @@ struct StudyDetailView: View {
         .onChange(of: pendingMedia.count) { _, _ in
             processPendingMedia()
         }
+        .onChange(of: module) { _, newValue in
+            existingCapturedMedia = StudyDetailView.initialExistingMedia(detail: detail, module: newValue)
+        }
     }
 
     // MARK: - Sections
+
+    private var actionsSection: some View {
+        Section("Actions") {
+            if detail.study.status == .draft {
+                Button("Save as Draft") {
+                    Task { await saveDraftChanges() }
+                }
+                .disabled(viewModel.isBusy)
+            }
+
+            if viewModel.canSubmitStudy {
+                Button("Submit for Review") {
+                    Task { await submitForReview() }
+                }
+                .disabled(!viewModel.canSubmitStudy || viewModel.isBusy)
+            }
+        }
+    }
+
+    private func saveDraftChanges() async {
+        guard detail.study.status == .draft else { return }
+        await viewModel.updateMetadata(
+            metadataForSave,
+            successMessage: "Draft saved."
+        )
+    }
+
+    private func submitForReview() async {
+        guard viewModel.canSubmitStudy else { return }
+        await viewModel.submitStudy(study: detail.study)
+    }
 
     private var caseOverviewSection: some View {
         Section("Case Overview") {
@@ -180,7 +212,8 @@ struct StudyDetailView: View {
             } else {
                 ForEach(detail.media, id: \.id) { media in
                     VStack(alignment: .leading, spacing: 8) {
-                        MediaRowView(media: media)
+                        let label = detail.metadata.mediaLabel(for: media.id)
+                        MediaRowView(media: media, label: label)
                         let comments = detail.feedback.filter { $0.mediaId == media.id }
                         if !comments.isEmpty {
                             MediaFeedbackList(feedback: comments)
@@ -302,7 +335,15 @@ struct StudyDetailView: View {
                     continue
                 }
                 let contentType = inferredContentType(for: tempURL, mediaType: item.type)
-                viewModel.enqueueUpload(fileURL: tempURL, contentType: contentType, study: detail.study)
+                let label = item.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? item.echoView?.rawValue
+                    : item.title
+                viewModel.enqueueUpload(
+                    fileURL: tempURL,
+                    contentType: contentType,
+                    study: detail.study,
+                    label: label
+                )
                 processedMediaIDs.insert(item.id)
             } catch {
                 viewModel.presentBanner("Upload failed: \(error.localizedDescription)")
@@ -340,6 +381,26 @@ struct StudyDetailView: View {
         switch mediaType {
         case .video: return "video/quicktime"
         case .image: return "image/jpeg"
+        }
+    }
+
+    private static func initialExistingMedia(
+        detail: AppViewModel.StudyDetailState,
+        module: UltrasoundModule?
+    ) -> [ExistingCaseMedia] {
+        guard let module else { return [] }
+        let lookup = module.requiredViews.reduce(into: [String: String]()) { dict, value in
+            dict[value.normalizedMediaLabel] = value
+        }
+        return detail.media.compactMap { media in
+            guard
+                let label = detail.metadata.mediaLabel(for: media.id)?.normalizedMediaLabel,
+                let resolved = lookup[label]
+            else {
+                return nil
+            }
+            let displayLabel = detail.metadata.mediaLabel(for: media.id) ?? resolved
+            return ExistingCaseMedia(media: media, viewName: resolved, isRequired: true, label: displayLabel)
         }
     }
 }
@@ -418,9 +479,10 @@ private struct UploadProgressRow: View {
 
 private struct MediaRowView: View {
     let media: Media
+    let label: String?
 
     var body: some View {
-        let displayName = media.storagePath.split(separator: "/").last.map(String.init) ?? media.storagePath
+        let displayName = label?.isEmpty == false ? label! : media.displayName
 
         VStack(alignment: .leading, spacing: 4) {
             Text(displayName)
@@ -550,4 +612,10 @@ private struct UploadDisplay: Identifiable {
     let status: TUSUploadService.UploadStatus
 
     var id: UUID { context.id }
+}
+
+private extension String {
+    var normalizedMediaLabel: String {
+        trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
 }

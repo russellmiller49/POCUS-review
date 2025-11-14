@@ -156,7 +156,7 @@ struct CaseUploadWizard: View {
             guard let study = await viewModel.createDraftStudy(input: input) else { return }
             let uploadsSuccessful = await uploadInitialMedia(for: study)
             guard uploadsSuccessful else { return }
-            await viewModel.submitStudy()
+            await viewModel.submitStudy(study: study)
             await MainActor.run {
                 uploadedMedia.removeAll()
                 showConfirmation = true
@@ -214,8 +214,16 @@ extension CaseUploadWizard {
             do {
                 let fileURL = try prepareFileURL(for: item)
                 let contentType = inferContentType(for: item, url: fileURL)
+                let label = item.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? item.echoView?.rawValue
+                    : item.title
                 if let handleID = await MainActor.run(body: {
-                    viewModel.enqueueUpload(fileURL: fileURL, contentType: contentType, study: study)
+                    viewModel.enqueueUpload(
+                        fileURL: fileURL,
+                        contentType: contentType,
+                        study: study,
+                        label: label
+                    )
                 }) {
                     handleIDs.append(handleID)
                 } else {

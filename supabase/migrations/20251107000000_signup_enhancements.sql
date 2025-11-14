@@ -122,3 +122,16 @@ $$;
 GRANT EXECUTE ON FUNCTION public.approve_role_request(uuid, uuid) TO authenticated;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+

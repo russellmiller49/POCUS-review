@@ -12,12 +12,16 @@ struct ReviewDetailView: View {
     @State private var signoffStatus: SignoffStatus = .approved
     @State private var annotations: [FeedbackAnnotation] = []
     @State private var mediaComments: [UUID: String] = [:]
+    @State private var detail: AppViewModel.StudyDetailState?
 
     var body: some View {
         NavigationStack {
             Form {
-                if let detail = currentDetail {
-                    CaseOverviewSection(detail: detail)
+                if let detail {
+                    CaseOverviewSection(
+                        detail: detail,
+                        fellow: viewModel.fellowInfo(for: study.createdBy)
+                    )
                     ClinicalDetailsSection(detail: detail)
                     MediaSection(
                         detail: detail,
@@ -25,9 +29,6 @@ struct ReviewDetailView: View {
                         mediaComments: $mediaComments
                     ) { media, text in
                         saveComment(text, for: media)
-                    }
-                    if !annotations.isEmpty {
-                        AnnotationDraftSection(annotations: $annotations, media: detail.media)
                     }
                 } else {
                     Section {
@@ -66,7 +67,7 @@ struct ReviewDetailView: View {
                                 summary: comments,
                                 detailedComments: [],
                                 teachingPoints: [],
-                                annotations: annotationPayloads(for: currentDetail),
+                                annotations: annotationPayloads(for: detail),
                                 signoffStatus: signoffStatus
                             )
                             dismiss()
@@ -77,7 +78,7 @@ struct ReviewDetailView: View {
             }
         }
         .task {
-            await viewModel.loadStudyDetail(for: study)
+            detail = await viewModel.fetchStudyDetail(for: study)
         }
     }
 
@@ -100,20 +101,14 @@ struct ReviewDetailView: View {
             await MainActor.run {
                 mediaComments[media.id] = ""
             }
+            detail = await viewModel.fetchStudyDetail(for: study)
         }
     }
-
-    private var currentDetail: AppViewModel.StudyDetailState? {
-        if let detail = viewModel.studyDetail, detail.study.id == study.id {
-            return detail
-        }
-        return nil
-    }
-
 }
 
 private struct CaseOverviewSection: View {
     let detail: AppViewModel.StudyDetailState
+    let fellow: (name: String, email: String)?
 
     var body: some View {
         let metadata = detail.metadata
@@ -124,6 +119,10 @@ private struct CaseOverviewSection: View {
                 Label(module.rawValue, systemImage: "waveform.path.ecg")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+            }
+            if let fellow {
+                Text("Fellow: \(fellow.name)")
+                    .font(.subheadline)
             }
             if let submitted = detail.study.submittedAt {
                 Text("Submitted \(submitted.formatted(date: .abbreviated, time: .shortened))")
@@ -189,6 +188,7 @@ private struct MediaSection: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(detail.media, id: \.id) { media in
+                    let label = detail.metadata.mediaLabel(for: media.id)
                     MediaAttachmentRow(
                         media: media,
                         annotations: $annotations,
@@ -197,7 +197,8 @@ private struct MediaSection: View {
                             set: { mediaComments[media.id] = $0 }
                         ),
                         existingFeedback: detail.feedback.filter { $0.mediaId == media.id },
-                        onSaveComment: saveComment
+                        onSaveComment: saveComment,
+                        label: label
                     )
                 }
             }
@@ -212,11 +213,11 @@ private struct MediaAttachmentRow: View {
     @Binding var commentText: String
     let existingFeedback: [Feedback]
     let onSaveComment: (Media, String) -> Void
+    let label: String?
     @State private var signedURL: URL?
     @State private var isLoading = true
     @State private var loadError: String?
     @State private var showFullScreen = false
-    @State private var player: AVPlayer?
     @State private var showAnnotator = false
 
     var body: some View {
@@ -227,7 +228,7 @@ private struct MediaAttachmentRow: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(existingAnnotations) { annotation in
-                            AnnotationChip(annotation: annotation) {
+                            ReviewAnnotationChip(annotation: annotation) {
                                 annotations.removeAll { $0.id == annotation.id }
                             }
                         }
@@ -274,7 +275,8 @@ private struct MediaAttachmentRow: View {
     }
 
     private var displayName: String {
-        media.displayName
+        if let label, !label.isEmpty { return label }
+        return media.displayName
     }
 
     private var existingAnnotations: [FeedbackAnnotation] {
@@ -289,6 +291,12 @@ private struct MediaAttachmentRow: View {
                 Text(displayName)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
+                if label != nil {
+                    Text(media.displayName)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
                 Text(media.contentType)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -324,59 +332,39 @@ private struct MediaAttachmentRow: View {
                 .foregroundStyle(.secondary)
         } else if let url = signedURL {
             if isImage {
-                imageView(url: url)
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                            .frame(maxWidth: .infinity, minHeight: 120)
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity)
+                    case .failure:
+                        Text("Unable to load image.")
+                            .foregroundStyle(.secondary)
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
             } else if isVideo {
-                videoView(url: url)
+                VideoPlayer(player: AVPlayer(url: url))
+                    .frame(maxWidth: .infinity, minHeight: 180)
             } else {
-                Link("Open media", destination: url)
-            }
-        } else {
-            Text("Media unavailable.")
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func imageView(url: URL) -> some View {
-        ZStack {
-            Color.black.opacity(0.05)
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .onTapGesture { showFullScreen = true }
-                case .failure:
-                    Text("Unable to load image.")
-                        .foregroundStyle(.secondary)
-                @unknown default:
-                    EmptyView()
-                }
+                Text("Unsupported media type.")
+                    .foregroundStyle(.secondary)
             }
         }
-        .frame(maxHeight: 220)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
-    private func videoView(url: URL) -> some View {
-        VideoPlayer(player: player)
-            .frame(height: 220)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .onAppear {
-                if player == nil {
-                    player = AVPlayer(url: url)
-                }
-            }
     }
 
     private var isImage: Bool {
-        media.isImage
+        media.contentType.lowercased().hasPrefix("image/")
     }
 
     private var isVideo: Bool {
-        media.isVideo
+        media.contentType.lowercased().hasPrefix("video/")
     }
 
     private func loadSignedURLIfNeeded() async {
@@ -385,73 +373,31 @@ private struct MediaAttachmentRow: View {
             return
         }
         isLoading = true
-        loadError = nil
-        let url = await viewModel.signedURL(for: media)
-        await MainActor.run {
-            self.signedURL = url
-            self.isLoading = false
-            if url == nil {
-                self.loadError = "Unable to load media."
-            }
+        if let url = await viewModel.signedURL(for: media) {
+            signedURL = url
+            loadError = nil
+        } else {
+            loadError = "Unable to load media."
         }
+        isLoading = false
     }
 }
 
-private struct AnnotationDraftSection: View {
-    @Binding var annotations: [FeedbackAnnotation]
-    let media: [Media]
+private struct ReviewAnnotationChip: View {
+    let annotation: FeedbackAnnotation
+    let onRemove: () -> Void
 
     var body: some View {
-        Section("Annotation Drafts") {
-            ForEach(annotations) { annotation in
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Circle()
-                            .fill(annotation.color)
-                            .frame(width: 10, height: 10)
-                        Text(annotation.title)
-                            .font(.headline)
-                        Spacer()
-                        if let mediaName = mediaName(for: annotation.mediaID) {
-                            Text(mediaName)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    if !annotation.description.isEmpty {
-                        Text(annotation.description)
-                            .font(.subheadline)
-                    }
-                    if let timestamp = annotation.timestamp {
-                        Text("@ \(formatTimestamp(timestamp))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .swipeActions {
-                    Button(role: .destructive) {
-                        annotations.removeAll { $0.id == annotation.id }
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
+        HStack(spacing: 4) {
+            Text(annotation.title)
+                .font(.caption)
+            Button(role: .destructive, action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
             }
-            if annotations.isEmpty {
-                Text("Add annotations from the media list above.")
-                    .foregroundStyle(.secondary)
-            }
+            .buttonStyle(.borderless)
         }
-    }
-
-    private func mediaName(for id: UUID?) -> String? {
-        guard let id else { return nil }
-        return media.first(where: { $0.id == id })?.displayName
-    }
-
-    private func formatTimestamp(_ seconds: TimeInterval) -> String {
-        let minutes = Int(seconds) / 60
-        let secs = Int(seconds) % 60
-        return String(format: "%d:%02d", minutes, secs)
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
     }
 }
 
@@ -467,20 +413,6 @@ private struct MediaFeedbackRow: View {
         }
         .padding(8)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemBackground)))
-    }
-}
-
-extension Media {
-    var displayName: String {
-        storagePath.split(separator: "/").last.map(String.init) ?? storagePath
-    }
-
-    var isImage: Bool {
-        contentType.lowercased().hasPrefix("image/")
-    }
-
-    var isVideo: Bool {
-        contentType.lowercased().hasPrefix("video/")
     }
 }
 
@@ -524,20 +456,31 @@ private struct FullScreenMediaViewer: View {
                         .onDisappear {
                             player?.pause()
                         }
-                        .ignoresSafeArea()
                 } else {
-                    Link("Open media", destination: url)
-                        .padding()
+                    Text("Unsupported media type.")
+                        .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle(media.storagePath.split(separator: "/").last.map(String.init) ?? "Media")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(media.displayName)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
             }
-            .background(Color.black.ignoresSafeArea())
         }
+    }
+}
+
+extension Media {
+    var displayName: String {
+        storagePath.split(separator: "/").last.map(String.init) ?? storagePath
+    }
+
+    var isImage: Bool {
+        contentType.lowercased().hasPrefix("image/")
+    }
+
+    var isVideo: Bool {
+        contentType.lowercased().hasPrefix("video/")
     }
 }
