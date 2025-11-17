@@ -16,6 +16,8 @@ struct ContentView: View {
                     SignupView(institutions: viewModel.institutions)
                 case .codeEntry(let email):
                     OTPVerificationView(email: email)
+                case .reviewerLogin:
+                    ReviewerLoginView()
                 case .selectingInstitution:
                     InstitutionSelectionView()
                 case .selectingRole:

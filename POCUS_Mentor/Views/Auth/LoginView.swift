@@ -32,13 +32,24 @@ struct LoginView: View {
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.email.isEmpty || viewModel.isBusy)
             
-            Button("Don't have an account? Sign up") {
-                Task {
-                    await viewModel.presentSignup()
+            HStack(spacing: 16) {
+                Button("Don't have an account? Sign up") {
+                    Task {
+                        await viewModel.presentSignup()
+                    }
                 }
+                .font(.subheadline)
+                .foregroundColor(.blue)
+                
+                Text("•")
+                    .foregroundColor(.secondary)
+                
+                Button("TestFlight Reviewer") {
+                    viewModel.presentReviewerLogin()
+                }
+                .font(.subheadline)
+                .foregroundColor(.blue)
             }
-            .font(.subheadline)
-            .foregroundColor(.blue)
             .padding(.top, 8)
 
             Spacer()

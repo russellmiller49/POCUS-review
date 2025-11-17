@@ -9,6 +9,7 @@ final class AppViewModel: ObservableObject {
         case login
         case signup
         case codeEntry(email: String)
+        case reviewerLogin
         case selectingInstitution
         case selectingRole(InstitutionRoleGroup)
         case dashboard
@@ -135,6 +136,7 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     @Published private(set) var phase: Phase = .loading
     @Published var email: String = ""
     @Published var otpCode: String = ""
+    @Published var reviewerPassword: String = ""
     @Published private(set) var memberships: [MembershipWithInstitution] = []
     @Published private(set) var selectedMembership: MembershipWithInstitution?
     @Published private(set) var roleSelectionGroup: InstitutionRoleGroup?
@@ -357,6 +359,41 @@ struct InstitutionRoleGroup: Identifiable, Equatable {
     /// Presents the login screen.
     func presentLogin() {
         phase = .login
+    }
+    
+    /// Presents the reviewer login screen for TestFlight.
+    func presentReviewerLogin() {
+        phase = .reviewerLogin
+    }
+    
+    /// Signs in as a reviewer using password authentication.
+    func signInAsReviewer(role: String) async {
+        isBusy = true
+        defer { isBusy = false }
+        
+        // TestFlight reviewer accounts
+        let reviewerAccounts: [String: (email: String, password: String)] = [
+            "fellow": ("reviewer.fellow@testflight.app", "TestFlight2024!"),
+            "attending": ("reviewer.attending@testflight.app", "TestFlight2024!"),
+            "admin": ("reviewer.admin@testflight.app", "TestFlight2024!")
+        ]
+        
+        guard let account = reviewerAccounts[role.lowercased()] else {
+            banner = BannerMessage(text: "Invalid reviewer role.")
+            return
+        }
+        
+        do {
+            let session = try await authService.signInWithPassword(
+                email: account.email,
+                password: account.password
+            )
+            authSession = session
+            phase = .loading
+            try await loadMemberships()
+        } catch {
+            banner = BannerMessage(text: "Reviewer login failed: \(error.localizedDescription)")
+        }
     }
     
     func signup(name: String, institution: Institution?, role: MembershipRole, pgyYear: String?) async {
