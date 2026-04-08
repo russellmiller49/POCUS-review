@@ -18,6 +18,7 @@ final class TUSUploadService: NSObject, ObservableObject {
         let objectName: String
         let contentType: String
         let fileURL: URL
+        let label: String?
     }
 
     struct UploadHandle {
@@ -78,7 +79,8 @@ final class TUSUploadService: NSObject, ObservableObject {
         accessToken: String,
         cacheControl: String = "3600",
         metadata: [String: Any] = ["source": "ios", "deidentified": true],
-        upsert: Bool = true
+        upsert: Bool = true,
+        label: String? = nil
     ) throws -> UploadHandle {
         let fileUUID = UUID()
         let objectName = makeObjectName(
@@ -124,7 +126,8 @@ final class TUSUploadService: NSObject, ObservableObject {
             institutionId: institutionId,
             objectName: objectName,
             contentType: contentType,
-            fileURL: fileURL
+            fileURL: fileURL,
+            label: label
         )
 
         contexts[uploadId] = context

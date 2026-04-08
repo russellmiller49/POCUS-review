@@ -1,4 +1,0 @@
-module TUSKit {
-header "TUSKit-Swift.h"
-export *
-}

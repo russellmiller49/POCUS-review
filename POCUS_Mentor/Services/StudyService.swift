@@ -12,7 +12,9 @@ protocol StudyServicing: Sendable {
     func upsertSignoff(_ payload: UpsertSignoffRequest) async throws -> Signoff
     func fetchMedia(for studyId: UUID) async throws -> [Media]
     func fetchFeedback(for studyId: UUID) async throws -> [Feedback]
+    func fetchFeedback(for studyIds: [UUID]) async throws -> [Feedback]
     func fetchSignoff(for studyId: UUID) async throws -> Signoff?
+    func fetchSignoffs(for studyIds: [UUID]) async throws -> [Signoff]
 }
 
 struct SupabaseStudyService: StudyServicing {
@@ -73,6 +75,17 @@ struct SupabaseStudyService: StudyServicing {
         return response.value.map(\.model)
     }
 
+    func fetchFeedback(for studyIds: [UUID]) async throws -> [Feedback] {
+        guard !studyIds.isEmpty else { return [] }
+        let response: PostgrestResponse<[FeedbackRow]> = try await client
+            .from("feedback")
+            .select()
+            .`in`("study_id", values: studyIds.map(\.uuidString))
+            .order("created_at", ascending: false)
+            .execute()
+        return response.value.map(\.model)
+    }
+
     func fetchSignoff(for studyId: UUID) async throws -> Signoff? {
         let response: PostgrestResponse<[SignoffRow]> = try await client
             .from("signoffs")
@@ -83,8 +96,18 @@ struct SupabaseStudyService: StudyServicing {
         return response.value.first?.model
     }
 
+    func fetchSignoffs(for studyIds: [UUID]) async throws -> [Signoff] {
+        guard !studyIds.isEmpty else { return [] }
+        let response: PostgrestResponse<[SignoffRow]> = try await client
+            .from("signoffs")
+            .select()
+            .`in`("study_id", values: studyIds.map(\.uuidString))
+            .execute()
+        return response.value.map(\.model)
+    }
+
     func updateStudyStatus(studyId: UUID, status: StudyStatus, submittedAt: Date?) async throws -> Study {
-        let payload = UpdateStudyStatusPayload(status: status, submittedAt: submittedAt)
+        let payload = UpdateStudyStatusPayload(status: status.rawValue, submittedAt: submittedAt)
         let response: PostgrestResponse<StudyRow> = try await client
             .from("studies")
             .update(payload)
@@ -143,6 +166,7 @@ struct NewStudyRequest: Encodable, Sendable {
     let examType: String
     let status: StudyStatus
     let notes: String?
+    let assignedAttendingId: UUID?
 
     init(
         id: UUID = UUID(),
@@ -150,7 +174,8 @@ struct NewStudyRequest: Encodable, Sendable {
         createdBy: UUID,
         examType: String,
         status: StudyStatus,
-        notes: String? = nil
+        notes: String? = nil,
+        assignedAttendingId: UUID? = nil
     ) {
         self.id = id
         self.institutionId = institutionId
@@ -158,6 +183,7 @@ struct NewStudyRequest: Encodable, Sendable {
         self.examType = examType
         self.status = status
         self.notes = notes
+        self.assignedAttendingId = assignedAttendingId
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -167,11 +193,12 @@ struct NewStudyRequest: Encodable, Sendable {
         case examType = "exam_type"
         case status
         case notes
+        case assignedAttendingId = "assigned_attending"
     }
 }
 
 struct UpdateStudyStatusPayload: Encodable {
-    let status: StudyStatus
+    let status: String
     let submittedAt: Date?
 
     private enum CodingKeys: String, CodingKey {
@@ -244,19 +271,22 @@ struct NewFeedbackRequest: Encodable, Sendable {
     let reviewerId: UUID
     let rating: Int?
     let comments: String?
+    let mediaId: UUID?
 
     init(
         id: UUID = UUID(),
         studyId: UUID,
         reviewerId: UUID,
         rating: Int? = nil,
-        comments: String? = nil
+        comments: String? = nil,
+        mediaId: UUID? = nil
     ) {
         self.id = id
         self.studyId = studyId
         self.reviewerId = reviewerId
         self.rating = rating
         self.comments = comments
+        self.mediaId = mediaId
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -265,6 +295,7 @@ struct NewFeedbackRequest: Encodable, Sendable {
         case reviewerId = "reviewer_id"
         case rating
         case comments
+        case mediaId = "media_id"
     }
 }
 
@@ -308,6 +339,7 @@ private struct StudyRow: Decodable {
     let status: StudyStatus
     let submitted_at: Date?
     let notes: String?
+    let assigned_attending: UUID?
     let created_at: Date
 
     var model: Study {
@@ -319,6 +351,7 @@ private struct StudyRow: Decodable {
             status: status,
             submittedAt: submitted_at,
             notes: notes,
+            assignedAttendingId: assigned_attending,
             createdAt: created_at
         )
     }
@@ -360,6 +393,7 @@ private struct FeedbackRow: Decodable {
     let reviewer_id: UUID
     let rating: Int?
     let comments: String?
+    let media_id: UUID?
     let created_at: Date
 
     var model: Feedback {
@@ -369,6 +403,7 @@ private struct FeedbackRow: Decodable {
             reviewerId: reviewer_id,
             rating: rating,
             comments: comments,
+            mediaId: media_id,
             createdAt: created_at
         )
     }

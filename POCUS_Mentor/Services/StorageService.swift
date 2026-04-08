@@ -19,14 +19,9 @@ struct SupabaseStorageService: StorageServicing {
 
     func signedURL(for path: String, expiresIn seconds: TimeInterval) async throws -> URL {
         let expires = Int(seconds.rounded())
-        let response = try await client.storage
+        return try await client.storage
             .from(bucket)
             .createSignedURL(path: path, expiresIn: expires)
-
-        guard let url = URL(string: response.signedURL) else {
-            throw StorageServiceError.invalidURL
-        }
-        return url
     }
 }
 

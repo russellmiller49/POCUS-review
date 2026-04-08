@@ -1,105 +1,111 @@
 import SwiftUI
 
 struct PortfolioProgressView: View {
-    let fellow: Fellow
-
+    let stats: AppViewModel.PortfolioStats
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Overall Progress
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Portfolio Progress")
-                    .font(.title2.bold())
-
-                HStack {
-                    ProgressView(value: fellow.totalPortfolioProgress)
-                        .tint(.blue)
-                    Text("\(Int(fellow.totalPortfolioProgress * 100))%")
-                        .font(.headline)
-                        .foregroundStyle(.blue)
-                }
-
-                Text("\(totalAccepted) of \(totalRequired) images accepted")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                summaryCard
+                examBreakdown
             }
             .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
-            )
-
-            // Module Breakdown
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Module Progress")
-                    .font(.headline)
-
-                ForEach(fellow.portfolioProgress, id: \.module) { progress in
-                    ModuleProgressCard(progress: progress)
-                }
-            }
         }
-        .padding()
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("Portfolio")
     }
-
-    private var totalAccepted: Int {
-        fellow.portfolioProgress.reduce(0) { $0 + $1.acceptedCount }
-    }
-
-    private var totalRequired: Int {
-        fellow.portfolioProgress.reduce(0) { $0 + $1.requiredCount }
-    }
-}
-
-struct ModuleProgressCard: View {
-    let progress: PortfolioProgress
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Overall Progress")
+                .font(.title2.bold())
+            
             HStack {
-                Circle()
-                    .fill(progress.module.color)
-                    .frame(width: 12, height: 12)
-
-                Text(progress.module.rawValue)
-                    .font(.subheadline.bold())
-
-                Spacer()
-
-                if progress.isComplete {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                } else {
-                    Text("\(progress.acceptedCount)/\(progress.requiredCount)")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(statusColor.opacity(0.2))
-                        .clipShape(Capsule())
+                ProgressView(value: completionRate)
+                    .tint(.blue)
+                Text("\(Int(completionRate * 100))%")
+                    .font(.headline)
+                    .foregroundStyle(.blue)
+            }
+            
+            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 12) {
+                GridRow {
+                    LabeledValue(title: "Drafts", value: "\(stats.drafts)")
+                    LabeledValue(title: "Submitted", value: "\(stats.submitted)")
+                }
+                GridRow {
+                    LabeledValue(title: "Returned", value: "\(stats.returned)")
+                    LabeledValue(title: "Completed", value: "\(stats.completed)")
+                }
+                GridRow {
+                    LabeledValue(title: "Acceptance", value: acceptanceRateText)
+                    LabeledValue(title: "Total", value: "\(stats.totalCases)")
                 }
             }
-
-            ProgressView(value: progress.progress)
-                .tint(statusColor)
-
-            Text(progress.module.description)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemGray6))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
         )
     }
-
-    private var statusColor: Color {
-        if progress.isComplete { return .green }
-        if progress.progress >= 0.5 { return .orange }
-        return .red
+    
+    private var examBreakdown: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Exam Type Distribution")
+                .font(.headline)
+            if stats.examBreakdown.isEmpty {
+                EmptyPlaceholderView(
+                    title: "No cases logged",
+                    message: "Once you submit studies you'll see the modality split here.",
+                    systemImage: "chart.pie"
+                )
+            } else {
+                ForEach(stats.examBreakdown) { stat in
+                    HStack {
+                        Text(stat.examType)
+                            .font(.subheadline)
+                        Spacer()
+                        Text("\(stat.count)")
+                            .font(.headline)
+                    }
+                    Divider()
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.05), radius: 6, y: 3)
+        )
+    }
+    
+    private var completionRate: Double {
+        guard stats.totalCases > 0 else { return 0 }
+        return Double(stats.completed) / Double(stats.totalCases)
+    }
+    
+    private var acceptanceRateText: String {
+        let submitted = stats.submitted + stats.completed + stats.returned
+        guard submitted > 0 else { return "--" }
+        let rate = Double(stats.completed) / Double(submitted)
+        return String(format: "%.0f%%", rate * 100)
     }
 }
 
-#Preview {
-    PortfolioProgressView(fellow: SampleData.fellows.first!)
+private struct LabeledValue: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title.uppercased())
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.headline)
+        }
+    }
 }

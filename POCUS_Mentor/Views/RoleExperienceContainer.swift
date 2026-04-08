@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct RoleExperienceContainer: View {
-    @EnvironmentObject private var appState: AppState
     let role: UserRole
     
     var body: some View {
@@ -33,5 +32,5 @@ struct RoleExperienceContainer: View {
 
 #Preview {
     RoleExperienceContainer(role: .fellow)
-        .environmentObject(AppState())
+        .environmentObject(AppViewModel())
 }

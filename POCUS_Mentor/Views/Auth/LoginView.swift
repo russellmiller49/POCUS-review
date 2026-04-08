@@ -25,12 +25,32 @@ struct LoginView: View {
                 if viewModel.isBusy {
                     ProgressView()
                 } else {
-                    Text("Send Code")
+                    Text("Sign In")
                         .frame(maxWidth: .infinity)
                 }
             }
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.email.isEmpty || viewModel.isBusy)
+            
+            HStack(spacing: 16) {
+                Button("Don't have an account? Sign up") {
+                    Task {
+                        await viewModel.presentSignup()
+                    }
+                }
+                .font(.subheadline)
+                .foregroundColor(.blue)
+                
+                Text("•")
+                    .foregroundColor(.secondary)
+                
+                Button("TestFlight Reviewer") {
+                    viewModel.presentReviewerLogin()
+                }
+                .font(.subheadline)
+                .foregroundColor(.blue)
+            }
+            .padding(.top, 8)
 
             Spacer()
         }

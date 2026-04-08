@@ -1,90 +1,148 @@
 import SwiftUI
 
 struct ProgramOverviewView: View {
-    @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var viewModel: AppViewModel
+    
+    private var analytics: AppViewModel.ProgramAnalytics {
+        viewModel.programAnalytics
+    }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                SectionHeader(title: "Program Pulse", subtitle: "Real-time snapshot of fellow engagement and teaching throughput.")
+                SectionHeader(title: "Program Pulse", subtitle: "Live snapshot of fellow throughput.")
                 metricsGrid
-                workloadSection
-                pendingTasksSection
+                examBreakdown
+                fellowSummaries
             }
             .padding(24)
         }
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Program Overview")
+        .refreshable {
+            await viewModel.refreshStudies()
+        }
     }
     
     private var metricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-            ForEach(appState.programMetrics) { metric in
-                MetricCard(
-                    title: metric.title,
-                    value: metric.value,
-                    trendDescription: metric.changeDescription,
-                    systemImage: metric.iconName,
-                    tint: metric.accentColor
-                )
-            }
+            MetricCard(
+                title: "Total Cases",
+                value: "\(analytics.totalCases)",
+                trendDescription: "Across this institution",
+                systemImage: "doc.on.doc",
+                tint: .blue
+            )
+            MetricCard(
+                title: "Submitted",
+                value: "\(analytics.submitted)",
+                trendDescription: "Awaiting review",
+                systemImage: "clock.badge.exclamationmark",
+                tint: .orange
+            )
+            MetricCard(
+                title: "Returned",
+                value: "\(analytics.returned)",
+                trendDescription: "Need revisions",
+                systemImage: "arrow.uturn.backward",
+                tint: .pink
+            )
+            MetricCard(
+                title: "Acceptance",
+                value: acceptanceRateText,
+                trendDescription: "Completed / Submitted",
+                systemImage: "checkmark.seal.fill",
+                tint: .green
+            )
         }
     }
     
-    private var workloadSection: some View {
+    private var examBreakdown: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Workload Distribution", subtitle: "Track pending reviews by urgency to optimize staffing.")
-            ForEach(CaseUrgency.allCases) { urgency in
-                let count = appState.awaitingFeedback.filter { $0.urgency == urgency }.count
-                HStack {
-                    Text(urgency.displayName)
-                        .font(.subheadline)
-                    Spacer()
-                    ProgressView(value: Double(count), total: Double(max(appState.awaitingFeedback.count, 1)))
-                        .accentColor(urgency.color)
-                        .frame(width: 180)
-                    Text("\(count)")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+            SectionHeader(title: "Exam Distribution", subtitle: "Identify modality demand.")
+            if analytics.examBreakdown.isEmpty {
+                EmptyPlaceholderView(
+                    title: "No cases",
+                    message: "Once studies are logged you'll see the mix here.",
+                    systemImage: "chart.bar"
+                )
+            } else {
+                ForEach(analytics.examBreakdown) { stat in
+                    HStack {
+                        Text(stat.examType)
+                        Spacer()
+                        Text("\(stat.count)")
+                            .font(.headline)
+                    }
+                    Divider()
                 }
-                .padding(.vertical, 6)
             }
         }
-        .padding(20)
-        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color(.systemBackground)))
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        )
     }
     
-    private var pendingTasksSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Action Items", subtitle: "Keep the educational program running smoothly.")
-            PendingTaskRow(systemImage: "person.2.badge.gearshape", title: "Assign mentors", message: "2 fellows are missing attending assignments this cycle.")
-            PendingTaskRow(systemImage: "doc.badge.gearshape", title: "Accreditation report", message: "June metrics report due in 5 days.")
-            PendingTaskRow(systemImage: "lock.shield", title: "Security review", message: "Confirm HIPAA audit acknowledgements.")
+    private var fellowSummaries: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Fellow Activity", subtitle: "Monitor queues by learner.")
+            if analytics.fellowSummaries.isEmpty {
+                EmptyPlaceholderView(
+                    title: "No fellows yet",
+                    message: "Invite learners to your institution to track progress.",
+                    systemImage: "person.3"
+                )
+            } else {
+                ForEach(analytics.fellowSummaries) { summary in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(summary.name)
+                            .font(.headline)
+                        Text(summary.email)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            LabeledValue(title: "Drafts", value: "\(summary.drafts)")
+                            Spacer()
+                            LabeledValue(title: "Submitted", value: "\(summary.submitted)")
+                            Spacer()
+                            LabeledValue(title: "Returned", value: "\(summary.returned)")
+                            Spacer()
+                            LabeledValue(title: "Completed", value: "\(summary.completed)")
+                        }
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(.systemBackground))
+                            .shadow(color: .black.opacity(0.05), radius: 6, y: 3)
+                    )
+                }
+            }
         }
-        .padding(20)
-        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color(.systemBackground)))
+    }
+    
+    private var acceptanceRateText: String {
+        let submitted = analytics.submitted + analytics.returned + analytics.completed
+        guard submitted > 0 else { return "--" }
+        let rate = Double(analytics.completed) / Double(submitted)
+        return String(format: "%.0f%%", rate * 100)
     }
 }
 
-private struct PendingTaskRow: View {
-    let systemImage: String
+private struct LabeledValue: View {
     let title: String
-    let message: String
+    let value: String
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(.blue)
-                .frame(width: 36)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                Text(message)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title.uppercased())
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.headline)
         }
     }
 }
